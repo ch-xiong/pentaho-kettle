@@ -57,7 +57,7 @@ $CATALINA_HOME
 
 ## 禁用UI组件
 
-Spoon使用XUL（XML用户界面语言）定义其用户界面的某些功能（请参见[此处]（https://wiki.pentaho.com/display/ServerDoc2x/the+pentaho+XUL+Framework+Developer%27s+Guide）了解详细信息）。
+Spoon使用XUL（XML用户界面语言）定义其用户界面的某些功能（请参见[此处](https://wiki.pentaho.com/display/ServerDoc2x/the+pentaho+XUL+Framework+Developer%27s+Guide)了解详细信息）。
 
 ```xml
 <menu id="file" label="${Spoon.Menu.File}" accesskey="alt-f">
