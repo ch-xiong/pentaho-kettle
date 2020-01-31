@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,7 +22,6 @@
 
 package org.pentaho.di.www;
 
-import org.owasp.encoder.Encode;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelFileWriter;
@@ -48,9 +47,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-/**
- * @deprecated has been replaced by RegisterTransServlet
- */
+//has been replaced by RegisterTransServlet
 @Deprecated
 public class AddTransServlet extends BaseHttpServlet implements CartePluginInterface {
   private static final long serialVersionUID = -6850701762586992604L;
@@ -63,7 +60,6 @@ public class AddTransServlet extends BaseHttpServlet implements CartePluginInter
   public AddTransServlet( TransformationMap transformationMap, SocketRepository socketRepository ) {
     super( transformationMap, socketRepository );
   }
-
   /**
 
     <div id="mindtouch">
@@ -206,8 +202,9 @@ public class AddTransServlet extends BaseHttpServlet implements CartePluginInter
       // Also copy the parameters over...
       //
       Map<String, String> params = transExecutionConfiguration.getParams();
-      for ( Map.Entry<String, String> entry : params.entrySet() ) {
-        transMeta.setParameterValue( entry.getKey(), entry.getValue() );
+      for ( String param : params.keySet() ) {
+        String value = params.get( param );
+        transMeta.setParameterValue( param, value );
       }
 
       // If there was a repository, we know about it at this point in time.
@@ -267,8 +264,7 @@ public class AddTransServlet extends BaseHttpServlet implements CartePluginInter
         } );
       }
 
-      String message =
-        Encode.forHtml( "Transformation '" + trans.getName() + "' was added to Carte with id " + carteObjectId );
+      String message = "Transformation '" + trans.getName() + "' was added to Carte with id " + carteObjectId;
 
       if ( useXML ) {
         // Return the log channel id as well
@@ -277,7 +273,7 @@ public class AddTransServlet extends BaseHttpServlet implements CartePluginInter
       } else {
         out.println( "<H1>" + message + "</H1>" );
         out.println( "<p><a href=\""
-          + convertContextPath( GetTransStatusServlet.CONTEXT_PATH ) + "?name=" + Encode.forUriComponent( trans.getName() ) + "&id="
+          + convertContextPath( GetTransStatusServlet.CONTEXT_PATH ) + "?name=" + trans.getName() + "&id="
           + carteObjectId + "\">Go to the transformation status page</a><p>" );
       }
     } catch ( Exception ex ) {

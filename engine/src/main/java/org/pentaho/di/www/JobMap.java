@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.xmlbeans.impl.piccolo.util.DuplicateKeyException;
 import org.pentaho.di.job.Job;
 import org.pentaho.di.job.JobConfiguration;
 
@@ -127,21 +126,6 @@ public class JobMap {
       }
     }
     return null;
-  }
-
-  public synchronized CarteObjectEntry getUniqueCarteObjectEntry( String jobName ) throws DuplicateKeyException {
-    CarteObjectEntry entry = null;
-    boolean unique = true;
-
-    for ( CarteObjectEntry key : jobMap.keySet() ) {
-      if ( unique && key.getName().equals( jobName ) ) {
-        unique = false;
-        entry = key;
-      } else if ( !unique && key.getName().equals( jobName ) ) {
-        throw new DuplicateKeyException();
-      }
-    }
-    return entry;
   }
 
   /**

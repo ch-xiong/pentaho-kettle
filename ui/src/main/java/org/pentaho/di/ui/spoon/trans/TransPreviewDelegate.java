@@ -245,8 +245,10 @@ public class TransPreviewDelegate extends SpoonDelegate implements XulEventHandl
    */
   public synchronized void refreshView() {
     if ( transGraph != null && transGraph.extraViewTabFolder != null ) {
-      if ( transGraph.extraViewTabFolder.getSelection() != transPreviewTab ) {
-        return;
+      if ( !transGraph.extraViewTabFolder.isDisposed() ) {
+        if ( transGraph.extraViewTabFolder.getSelection() != transPreviewTab ) {
+          return;
+        }
       }
     }
 
@@ -332,7 +334,6 @@ public class TransPreviewDelegate extends SpoonDelegate implements XulEventHandl
       }
       for ( int colNr = 0; colNr < rowMeta.size(); colNr++ ) {
         int dataIndex = dataRowMeta.indexOfValue( rowMeta.getValueMeta( colNr ).getName() );
-        dataIndex = dataIndex < 0 ? colNr : dataIndex;
         String string;
         ValueMetaInterface valueMetaInterface;
         try {
@@ -505,7 +506,7 @@ public class TransPreviewDelegate extends SpoonDelegate implements XulEventHandl
 
                 @Override
                 public void rowWrittenEvent( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
-                  if ( rowsData.size() < PropsUI.getInstance().getDefaultPreviewSize() ) {
+                  if ( rowsData.size() < 1000 ) {
                     try {
                       rowsData.add( new RowMetaAndData( rowMeta, rowMeta.cloneRow( row ) ) );
                     } catch ( Exception e ) {

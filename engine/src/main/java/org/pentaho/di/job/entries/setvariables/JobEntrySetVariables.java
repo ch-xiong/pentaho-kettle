@@ -28,7 +28,6 @@ import org.pentaho.di.job.entry.validator.JobEntryValidatorUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -242,9 +241,9 @@ public class JobEntrySetVariables extends JobEntryBase implements Cloneable, Job
             ) {
           Properties properties = new Properties();
           properties.load( reader );
-          for ( Map.Entry entry : properties.entrySet() ) {
-            variables.add( (String) entry.getKey() );
-            variableValues.add( (String) entry.getValue() );
+          for ( Object key : properties.keySet() ) {
+            variables.add( (String) key );
+            variableValues.add( (String) properties.get( key ) );
             variableTypes.add( fileVariableType );
           }
         } catch ( Exception e ) {

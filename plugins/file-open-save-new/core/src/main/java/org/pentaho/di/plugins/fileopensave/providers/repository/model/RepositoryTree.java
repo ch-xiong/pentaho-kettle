@@ -31,9 +31,9 @@ import java.util.List;
 /**
  * Created by bmorrise on 2/28/18.
  */
-public class RepositoryTree implements Tree<RepositoryFile> {
+public class RepositoryTree implements Tree<RepositoryDirectory> {
 
-  private static final int ORDER = 1;
+  private static final int ORDER = 2;
   private String name;
   private boolean includeRoot;
 
@@ -53,19 +53,19 @@ public class RepositoryTree implements Tree<RepositoryFile> {
     this.name = name;
   }
 
-  private List<RepositoryFile> children = new ArrayList<>();
+  private List<RepositoryDirectory> children = new ArrayList<>();
 
-  public List<RepositoryFile> getChildren() {
+  public List<RepositoryDirectory> getChildren() {
     return children;
   }
 
-  public void setChildren( List<RepositoryFile> children ) {
+  public void setChildren( List<RepositoryDirectory> children ) {
     this.children = children;
   }
 
   @Override
-  public void addChild( RepositoryFile repositoryFile ) {
-    children.add( repositoryFile );
+  public void addChild( RepositoryDirectory repositoryDirectory ) {
+    children.add( repositoryDirectory );
   }
 
   public boolean isIncludeRoot() {
@@ -82,9 +82,5 @@ public class RepositoryTree implements Tree<RepositoryFile> {
 
   @Override public int getOrder() {
     return ORDER;
-  }
-
-  @Override public boolean isHasChildren() {
-    return true;
   }
 }

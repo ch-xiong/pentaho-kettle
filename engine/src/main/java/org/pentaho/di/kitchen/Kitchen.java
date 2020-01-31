@@ -25,7 +25,6 @@ package org.pentaho.di.kitchen;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -53,7 +52,6 @@ import org.pentaho.di.core.plugins.RepositoryPluginType;
 import org.pentaho.di.core.util.EnvUtil;
 import org.pentaho.di.core.util.ExecutorUtil;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.i18n.LanguageChoice;
 import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.di.pan.CommandLineOption;
 import org.pentaho.metastore.stores.delegate.DelegatingMetaStore;
@@ -71,7 +69,7 @@ public class Kitchen {
   public static void main( String[] a ) throws Exception {
     final ExecutorService executor = ExecutorUtil.getExecutor();
     final RepositoryPluginType repositoryPluginType = RepositoryPluginType.getInstance();
-    Locale.setDefault( LanguageChoice.getInstance().getDefaultLocale() );
+
     final Future<Map.Entry<KettlePluginException, Future<KettleException>>> repositoryRegisterFuture =
       executor.submit( new Callable<Map.Entry<KettlePluginException, Future<KettleException>>>() {
 
@@ -116,7 +114,7 @@ public class Kitchen {
 
     StringBuilder optionRepname, optionUsername, optionTrustUser, optionPassword, optionJobname, optionDirname, initialDir;
     StringBuilder optionFilename, optionLoglevel, optionLogfile, optionLogfileOld, optionListdir;
-    StringBuilder optionListjobs, optionListrep, optionNorep, optionVersion, optionListParam, optionExport, optionBase64Zip, optionUuid;
+    StringBuilder optionListjobs, optionListrep, optionNorep, optionVersion, optionListParam, optionExport, optionBase64Zip;
     NamedParams optionParams = new NamedParamsDefault();
     NamedParams customOptions = new NamedParamsDefault();
 
@@ -183,7 +181,6 @@ public class Kitchen {
           "initialDir", null, initialDir =
           new StringBuilder(), false, true ),
         new CommandLineOption( "zip", "Base64Zip", optionBase64Zip = new StringBuilder(), false, true ),
-        new CommandLineOption( "uuid", "UUID", optionUuid = new StringBuilder(), false, true ),
         new CommandLineOption(
           "custom", BaseMessages.getString( PKG, "Kitchen.ComdLine.Custom" ), customOptions, false ),
         maxLogLinesOption, maxLogTimeoutOption, };
@@ -257,8 +254,7 @@ public class Kitchen {
         }
       }
 
-      Params.Builder builder = optionUuid.length() > 0 ? new Params.Builder( optionUuid.toString() ) : new Params.Builder();
-      Params jobParams = ( builder )
+      Params jobParams = ( new Params.Builder() )
               .blockRepoConns( optionNorep.toString() )
               .repoName( optionRepname.toString() )
               .repoUsername( optionUsername.toString() )

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -256,7 +256,7 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -265,10 +265,10 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
    * @return the SQL statement to add a column to the specified table
    */
   @Override
-  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE "
-      + tablename + " ADD ( " + getFieldDefinition( v, tk, pk, useAutoinc, true, false ) + " ) ";
+      + tablename + " ADD ( " + getFieldDefinition( v, tk, pk, use_autoinc, true, false ) + " ) ";
   }
 
   /**
@@ -280,7 +280,7 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -289,7 +289,7 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
    * @return the SQL statement to drop a column from the specified table
    */
   @Override
-  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE " + tablename + " DROP ( " + v.getName() + " ) " + Const.CR;
   }
@@ -303,7 +303,7 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -312,7 +312,7 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
    * @return the SQL statement to modify a column in the specified table
    */
   @Override
-  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     ValueMetaInterface tmpColumn = v.clone();
     String tmpName = v.getName();
@@ -340,32 +340,32 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
     String sql = "";
 
     // Create a new tmp column
-    sql += getAddColumnStatement( tablename, tmpColumn, tk, useAutoinc, pk, semicolon ) + ";" + Const.CR;
+    sql += getAddColumnStatement( tablename, tmpColumn, tk, use_autoinc, pk, semicolon ) + ";" + Const.CR;
     // copy the old data over to the tmp column
     sql += "UPDATE " + tablename + " SET " + tmpColumn.getName() + "=" + v.getName() + ";" + Const.CR;
     // drop the old column
-    sql += getDropColumnStatement( tablename, v, tk, useAutoinc, pk, semicolon ) + ";" + Const.CR;
+    sql += getDropColumnStatement( tablename, v, tk, use_autoinc, pk, semicolon ) + ";" + Const.CR;
     // create the wanted column
-    sql += getAddColumnStatement( tablename, v, tk, useAutoinc, pk, semicolon ) + ";" + Const.CR;
+    sql += getAddColumnStatement( tablename, v, tk, use_autoinc, pk, semicolon ) + ";" + Const.CR;
     // copy the data from the tmp column to the wanted column (again)
     // All this to avoid the rename clause as this is not supported on all Oracle versions
     sql += "UPDATE " + tablename + " SET " + v.getName() + "=" + tmpColumn.getName() + ";" + Const.CR;
     // drop the temp column
-    sql += getDropColumnStatement( tablename, tmpColumn, tk, useAutoinc, pk, semicolon );
+    sql += getDropColumnStatement( tablename, tmpColumn, tk, use_autoinc, pk, semicolon );
 
     return sql;
   }
 
   @Override
-  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean useAutoinc,
-                                    boolean addFieldName, boolean addCr ) {
+  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean use_autoinc,
+    boolean add_fieldname, boolean add_cr ) {
     StringBuilder retval = new StringBuilder( 128 );
 
     String fieldname = v.getName();
     int length = v.getLength();
     int precision = v.getPrecision();
 
-    if ( addFieldName ) {
+    if ( add_fieldname ) {
       retval.append( fieldname ).append( ' ' );
     }
 
@@ -423,7 +423,7 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
         break;
     }
 
-    if ( addCr ) {
+    if ( add_cr ) {
       retval.append( Const.CR );
     }
 
@@ -495,16 +495,16 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
    *          a connected database
    * @param schemaName
    * @param tableName
-   * @param idxFields
+   * @param idx_fields
    * @return true if the index exists, false if it doesn't.
    * @throws KettleDatabaseException
    */
   @Override
-  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idxFields ) throws KettleDatabaseException {
+  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idx_fields ) throws KettleDatabaseException {
 
     String tablename = database.getDatabaseMeta().getQuotedSchemaTableCombination( schemaName, tableName );
 
-    boolean[] exists = new boolean[ idxFields.length];
+    boolean[] exists = new boolean[idx_fields.length];
     for ( int i = 0; i < exists.length; i++ ) {
       exists[i] = false;
     }
@@ -521,7 +521,7 @@ public class OracleDatabaseMeta extends BaseDatabaseMeta implements DatabaseInte
           Object[] row = database.getRow( res );
           while ( row != null ) {
             String column = database.getReturnRowMeta().getString( row, "COLUMN_NAME", "" );
-            int idx = Const.indexOfString( column, idxFields );
+            int idx = Const.indexOfString( column, idx_fields );
             if ( idx >= 0 ) {
               exists[idx] = true;
             }

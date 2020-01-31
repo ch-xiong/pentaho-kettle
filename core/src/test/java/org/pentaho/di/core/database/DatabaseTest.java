@@ -34,7 +34,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.AdditionalMatchers.aryEq;
-import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -45,16 +44,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
-import java.sql.BatchUpdateException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.List;
 import java.util.Properties;
 
@@ -124,7 +114,6 @@ public class DatabaseTest {
   public void setUp() throws Exception {
     conn = mockConnection( mock( DatabaseMetaData.class ) );
     when( log.getLogLevel() ).thenReturn( LogLevel.NOTHING );
-    when( dbMetaMock.getDatabaseInterface() ).thenReturn( databaseInterface );
     if ( !NamingManager.hasInitialContextFactoryBuilder() ) {
       // If JNDI is not initialized, use simpleJNDI
       System.setProperty( Context.INITIAL_CONTEXT_FACTORY,
@@ -491,8 +480,7 @@ public class DatabaseTest {
   public void testCheckTableExistsByDbMeta_Success() throws Exception {
     when( rs.next() ).thenReturn( true, false );
     when( rs.getString( "TABLE_NAME" ) ).thenReturn( EXISTING_TABLE_NAME );
-    when( dbMetaMock.getTables(
-      same( dbMetaDataMock ), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
+    when( dbMetaDataMock.getTables( any(), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
     Database db = new Database( log, dbMetaMock );
     db.setConnection( mockConnection( dbMetaDataMock ) );
 
@@ -504,8 +492,7 @@ public class DatabaseTest {
   public void testCheckTableNotExistsByDbMeta() throws Exception {
     when( rs.next() ).thenReturn( true, false );
     when( rs.getString( "TABLE_NAME" ) ).thenReturn( EXISTING_TABLE_NAME );
-    when( dbMetaMock.getTables(
-      same( dbMetaDataMock ), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
+    when( dbMetaDataMock.getTables( any(), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
     Database db = new Database( log, dbMetaMock );
     db.setConnection( mockConnection( dbMetaDataMock ) );
 
@@ -523,8 +510,7 @@ public class DatabaseTest {
       when( dbMetaMock.getName() ).thenReturn( TEST_NAME_OF_DB_CONNECTION );
       when( rs.next() ).thenReturn( true, false );
       when( rs.getString( "TABLE_NAME" ) ).thenThrow( SQL_EXCEPTION );
-      when( dbMetaMock.getTables(
-        same( dbMetaDataMock ), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
+      when( dbMetaDataMock.getTables( any(), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
       Database db = new Database( log, dbMetaMock );
       db.setConnection( mockConnection( dbMetaDataMock ) );
       db.checkTableExistsByDbMeta( SCHEMA_TO_CHECK, EXISTING_TABLE_NAME );
@@ -543,8 +529,7 @@ public class DatabaseTest {
       new KettleDatabaseException( "Unable to get database meta-data from the database." );
     try {
       when( rs.next() ).thenReturn( true, false );
-      when( dbMetaMock.getTables(
-        same( dbMetaDataMock ), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
+      when( dbMetaDataMock.getTables( any(), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( rs );
       Database db = new Database( log, dbMetaMock );
       db.setConnection( mockConnection( null ) );
       db.checkTableExistsByDbMeta( SCHEMA_TO_CHECK, EXISTING_TABLE_NAME );
@@ -563,8 +548,8 @@ public class DatabaseTest {
       new KettleDatabaseException( "Unable to get table-names from the database meta-data.", SQL_EXCEPTION );
     try {
       when( rs.next() ).thenReturn( true, false );
-      when( dbMetaMock.getTables(
-        same( dbMetaDataMock ), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenThrow( SQL_EXCEPTION );
+      when( dbMetaDataMock.getTables( any(), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) )
+        .thenThrow( SQL_EXCEPTION );
       Database db = new Database( log, dbMetaMock );
       db.setConnection( mockConnection( dbMetaDataMock ) );
       db.checkTableExistsByDbMeta( SCHEMA_TO_CHECK, EXISTING_TABLE_NAME );
@@ -583,8 +568,8 @@ public class DatabaseTest {
       new KettleDatabaseException( "Unable to get table-names from the database meta-data." );
     try {
       when( rs.next() ).thenReturn( true, false );
-      when( dbMetaMock.getTables(
-        same( dbMetaDataMock ), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) ).thenReturn( null );
+      when( dbMetaDataMock.getTables( any(), anyString(), anyString(), aryEq( TABLE_TYPES_TO_GET ) ) )
+        .thenReturn( null );
       Database db = new Database( log, dbMetaMock );
       db.setConnection( mockConnection( dbMetaDataMock ) );
       db.checkTableExistsByDbMeta( SCHEMA_TO_CHECK, EXISTING_TABLE_NAME );
@@ -762,8 +747,7 @@ public class DatabaseTest {
   public void testGetTablenames() throws SQLException, KettleDatabaseException {
     when( rs.next() ).thenReturn( true, false );
     when( rs.getString( "TABLE_NAME" ) ).thenReturn( EXISTING_TABLE_NAME );
-    when( dbMetaMock.getTables(
-      same( dbMetaDataMock ), anyString(), anyString(), any() ) ).thenReturn( rs );
+    when( dbMetaDataMock.getTables( any(), anyString(), anyString(), any() ) ).thenReturn( rs );
     Database db = new Database( log, dbMetaMock );
     db.setConnection( mockConnection( dbMetaDataMock ) );
 

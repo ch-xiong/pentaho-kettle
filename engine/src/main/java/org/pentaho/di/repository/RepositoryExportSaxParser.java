@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,23 +22,17 @@
 
 package org.pentaho.di.repository;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.core.xml.XMLParserFactoryProducer;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.ext.DefaultHandler2;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class RepositoryExportSaxParser extends DefaultHandler2 {
 
@@ -52,7 +46,7 @@ public class RepositoryExportSaxParser extends DefaultHandler2 {
 
   private RepositoryElementReadListener repositoryElementReadListener;
 
-  @VisibleForTesting final StringBuilder xml;
+  private final StringBuilder xml;
   private final String filename;
 
   private boolean add;
@@ -60,7 +54,7 @@ public class RepositoryExportSaxParser extends DefaultHandler2 {
 
   RepositoryImportFeedbackInterface feedback;
 
-  public RepositoryExportSaxParser( String filename, RepositoryImportFeedbackInterface feedback ) {
+  public RepositoryExportSaxParser( String filename, RepositoryImportFeedbackInterface feedback ) throws Exception {
     this.filename = filename;
     this.feedback = feedback;
     this.xml = new StringBuilder( 50000 );
@@ -68,8 +62,7 @@ public class RepositoryExportSaxParser extends DefaultHandler2 {
     this.cdata = false;
   }
 
-  public void parse( RepositoryElementReadListener repositoryElementReadListener )
-    throws SAXException, ParserConfigurationException, IOException {
+  public void parse( RepositoryElementReadListener repositoryElementReadListener ) throws Exception {
     this.repositoryElementReadListener = repositoryElementReadListener;
 
     SAXParserFactory factory = XMLParserFactoryProducer.createSecureSAXParserFactory();
@@ -77,7 +70,7 @@ public class RepositoryExportSaxParser extends DefaultHandler2 {
     this.saxParser.parse( new File( filename ), this );
   }
 
-  @Override public void startElement( String uri, String localName, String qName, Attributes attributes ) {
+  public void startElement( String uri, String localName, String qName, Attributes attributes ) throws SAXException {
     add =
       !( STRING_REPOSITORY.equals( qName ) || STRING_TRANSFORMATIONS.equals( qName ) || STRING_JOBS.equals( qName ) );
 
@@ -89,18 +82,11 @@ public class RepositoryExportSaxParser extends DefaultHandler2 {
         xml.setLength( 0 );
       }
 
-      Map<String, String> attMap = Collections.emptyMap();
-      if ( attributes != null && attributes.getLength() > 0 ) {
-        attMap = IntStream.range( 0, attributes.getLength() )
-          .boxed()
-          .collect( Collectors.toMap( attributes::getQName, attributes::getValue ) );
-      }
-
-      XMLHandler.openTag( xml, qName, attMap );
+      XMLHandler.openTag( xml, qName );
     }
   }
 
-  @Override public void endElement( String uri, String localName, String qName ) {
+  public void endElement( String uri, String localName, String qName ) throws SAXException {
     if ( add ) {
       XMLHandler.closeTag( xml, qName );
     }
@@ -109,21 +95,22 @@ public class RepositoryExportSaxParser extends DefaultHandler2 {
       if ( !repositoryElementReadListener.transformationElementRead( xml.toString(), feedback ) ) {
         saxParser.reset();
       }
-    } else if ( STRING_JOB.equals( qName )
-      && !repositoryElementReadListener.jobElementRead( xml.toString(), feedback ) ) {
-      saxParser.reset();
+    } else if ( STRING_JOB.equals( qName ) ) {
+      if ( !repositoryElementReadListener.jobElementRead( xml.toString(), feedback ) ) {
+        saxParser.reset();
+      }
     }
   }
 
-  @Override public void startCDATA() {
+  public void startCDATA() throws SAXException {
     cdata = true;
   }
 
-  @Override public void endCDATA() {
+  public void endCDATA() throws SAXException {
     cdata = false;
   }
 
-  @Override public void characters( char[] ch, int start, int length ) {
+  public void characters( char[] ch, int start, int length ) throws SAXException {
     if ( add ) {
 
       String string = new String( ch, start, length );
@@ -137,7 +124,7 @@ public class RepositoryExportSaxParser extends DefaultHandler2 {
   }
 
   @Override
-  public void fatalError( SAXParseException e ) {
+  public void fatalError( SAXParseException e ) throws SAXException {
     repositoryElementReadListener.fatalXmlErrorEncountered( e );
   }
 }

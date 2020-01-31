@@ -111,7 +111,7 @@ public class OlapInputMeta extends BaseStepMeta implements StepMetaInterface {
     }
   }
 
-  @Override @SuppressWarnings( "squid:S2068" )
+  @Override
   public void setDefault() {
 
     olap4jUrl = "http://localhost:8080/pentaho/Xmla";

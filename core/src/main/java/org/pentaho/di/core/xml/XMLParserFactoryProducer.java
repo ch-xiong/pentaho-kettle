@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -34,19 +34,10 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-
-import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
-import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;
 
 public class XMLParserFactoryProducer {
 
   private static final Log logger = LogFactory.getLog( XMLParserFactoryProducer.class );
-
-  private XMLParserFactoryProducer() { }
-
   /**
    * Creates an instance of {@link DocumentBuilderFactory} class with enabled {@link XMLConstants#FEATURE_SECURE_PROCESSING} property.
    * Enabling this feature prevents from some XXE attacks (e.g. XML bomb)
@@ -57,7 +48,7 @@ public class XMLParserFactoryProducer {
    */
   public static DocumentBuilderFactory createSecureDocBuilderFactory() throws ParserConfigurationException {
     DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-    docBuilderFactory.setFeature( FEATURE_SECURE_PROCESSING, true );
+    docBuilderFactory.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, true );
     docBuilderFactory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", true );
 
     return docBuilderFactory;
@@ -80,11 +71,10 @@ public class XMLParserFactoryProducer {
   public static SAXParserFactory createSecureSAXParserFactory()
     throws SAXNotSupportedException, SAXNotRecognizedException, ParserConfigurationException {
     SAXParserFactory factory = SAXParserFactory.newInstance();
-    factory.setFeature( FEATURE_SECURE_PROCESSING, true );
+    factory.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, true );
     factory.setFeature( "http://xml.org/sax/features/external-general-entities", false );
     factory.setFeature( "http://xml.org/sax/features/external-parameter-entities", false );
     factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", false );
-    factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", true );
 
     return factory;
   }
@@ -95,7 +85,7 @@ public class XMLParserFactoryProducer {
       reader.setEntityResolver( resolver );
     }
     try {
-      reader.setFeature( FEATURE_SECURE_PROCESSING, true );
+      reader.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, true );
       reader.setFeature( "http://xml.org/sax/features/external-general-entities", false );
       reader.setFeature( "http://xml.org/sax/features/external-parameter-entities", false );
       reader.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", false );
@@ -105,18 +95,5 @@ public class XMLParserFactoryProducer {
     reader.setIncludeExternalDTDDeclarations( false );
     reader.setIncludeInternalDTDDeclarations( false );
     return reader;
-  }
-
-  public static XMLInputFactory createSecureXMLInputFactory() {
-    XMLInputFactory factory = XMLInputFactory.newInstance();
-    factory.setProperty( IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE );
-    return factory;
-  }
-
-  public static TransformerFactory createSecureTransformerFactory() throws TransformerConfigurationException {
-    TransformerFactory factory = TransformerFactory.newInstance();
-    //using explicit string here because Sonar is still reporting a violation when using FEATURE_SECURE_PROCESSING
-    factory.setFeature( "http://javax.xml.XMLConstants/feature/secure-processing", true );
-    return factory;
   }
 }

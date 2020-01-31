@@ -27,16 +27,16 @@ define([
       scope: {model: "<ngModel", delete: "=didDelete"},
       link: function(scope, element, attrs) {
         scope.$watch("model", function(folder) {
-          if (!folder || folder.path === "" || folder.path === "Recents") {
+          if (folder.path === "" || folder.path === "Recents") {
             return;
           }
           $timeout(function() {
             scrollToSelectedFolder();
-          }, 1);
+          });
         });
 
         function scrollToSelectedFolder() {
-          var selectedFolders = element[0].getElementsByClassName("selected");
+          var selectedFolders = document.getElementsByClassName("selected");
           if (selectedFolders.length === 0 || selectedFolders[0].offsetParent === null) {
             return;
           }

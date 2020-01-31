@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,6 +26,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -37,9 +38,13 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
@@ -53,6 +58,7 @@ import org.pentaho.di.core.fileinput.FileInputList;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaBase;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
+import org.pentaho.di.core.util.Utils;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -67,10 +73,6 @@ import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
 import org.pentaho.di.ui.core.dialog.EnterTextDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.PreviewRowsDialog;
-import org.pentaho.di.ui.core.events.dialog.FilterType;
-import org.pentaho.di.ui.core.events.dialog.SelectionAdapterFileDialogTextVar;
-import org.pentaho.di.ui.core.events.dialog.SelectionAdapterOptions;
-import org.pentaho.di.ui.core.events.dialog.SelectionOperation;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
@@ -81,81 +83,138 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JsonInputDialog extends BaseStepDialog implements StepDialogInterface {
-
-  private static final Class<?> PKG = JsonInputMeta.class;
-  private static final String YES = BaseMessages.getString( PKG, "System.Combo.Yes" );
-  private static final String NO = BaseMessages.getString( PKG, "System.Combo.No" );
+  private static Class<?> PKG = JsonInputMeta.class; // for i18n purposes, needed by Translator2!!
 
   private CTabFolder wTabFolder;
+  private FormData fdTabFolder;
 
-  private Label wlFilename;
-  private Label wlSourceIsAFile;
+  private CTabItem wFileTab, wContentTab, wFieldsTab;
+
+  private Composite wFileComp, wContentComp, wFieldsComp;
+  private FormData fdFileComp, fdContentComp, fdFieldsComp;
+
+  private Label wlFilename, wlSourceIsAFile;
   private Button wbbFilename; // Browse: add file or directory
   private Button wbdFilename; // Delete
   private Button wbeFilename; // Edit
   private Button wbaFilename; // Add or change
   private TextVar wFilename;
+  private FormData fdlFilename, fdbFilename, fdbdFilename, fdbeFilename, fdbaFilename, fdFilename;
 
   private Label wlFilenameList;
   private TableView wFilenameList;
+  private FormData fdlFilenameList, fdFilenameList;
 
   private Label wlFilemask;
   private TextVar wFilemask;
+  private FormData fdlFilemask, fdFilemask;
 
   private Button wbShowFiles;
+  private FormData fdbShowFiles;
 
-  private Label wlSourceField;
+  private FormData fdlFieldValue, fdlSourceStreamField, fdlSourceIsAFile;
+  private FormData fdFieldValue, fdSourceStreamField;
+  private FormData fdOutputField, fdSourceIsAFile, fdAdditionalFields, fdAddFileResult, fdConf;
+  private Label wlSourceField, wlSourceStreamField;
   private CCombo wFieldValue;
-  private Button wSourceStreamField;
-  private Button wSourceIsAFile;
+  private Button wSourceStreamField, wSourceIsAFile;
 
   private Label wlInclFilename;
-  private Button wInclFilename;
-  private Button wAddResult;
+  private Button wInclFilename, wAddResult;
+  private FormData fdlInclFilename, fdInclFilename, fdAddResult, fdlAddResult;
 
   private Label wlreadUrl;
   private Button wreadUrl;
+  private FormData fdlreadUrl, fdreadUrl;
 
   private Label wlremoveSourceField;
   private Button wremoveSourceField;
+  private FormData fdlremoveSourceField, fdremoveSourceField;
   private Label wlInclFilenameField;
   private TextVar wInclFilenameField;
+  private FormData fdlInclFilenameField, fdInclFilenameField;
 
-  private Label wlAddResult;
+  private Label wlInclRownum, wlAddResult;
   private Button wInclRownum;
+  private FormData fdlInclRownum, fdRownum;
 
   private Label wlInclRownumField;
   private TextVar wInclRownumField;
+  private FormData fdlInclRownumField, fdInclRownumField;
 
   private Label wlLimit;
   private Text wLimit;
+  private FormData fdlLimit, fdLimit;
 
   private TableView wFields;
+  private FormData fdFields;
+
+  private Group wOutputField;
+  private Group wAdditionalFields;
+  private Group wAddFileResult;
+  private Group wConf;
 
   private Label wlExcludeFilemask;
   private TextVar wExcludeFilemask;
+  private FormData fdlExcludeFilemask, fdExcludeFilemask;
 
   // ignore empty files flag
+  private Label wlIgnoreEmptyFile;
   private Button wIgnoreEmptyFile;
+  private FormData fdlIgnoreEmptyFile, fdIgnoreEmptyFile;
 
   // ignore missing path
+  private Label wlIgnoreMissingPath;
   private Button wIgnoreMissingPath;
+  private FormData fdlIgnoreMissingPath, fdIgnoreMissingPath;
 
   // default path leaf to null
+  private Label wlDefaultPathLeafToNull;
   private Button wDefaultPathLeafToNull;
+  private FormData fdlDefaultPathLeafToNull, fdDefaultPathLeafToNull;
 
   // do not fail if no files?
+  private Label wldoNotFailIfNoFile;
   private Button wdoNotFailIfNoFile;
+  private FormData fdldoNotFailIfNoFile, fddoNotFailIfNoFile;
 
+  private CTabItem wAdditionalFieldsTab;
+  private Composite wAdditionalFieldsComp;
+  private FormData fdAdditionalFieldsComp;
+
+  private Label wlShortFileFieldName;
+  private FormData fdlShortFileFieldName;
   private TextVar wShortFileFieldName;
+  private FormData fdShortFileFieldName;
+  private Label wlPathFieldName;
+  private FormData fdlPathFieldName;
   private TextVar wPathFieldName;
+  private FormData fdPathFieldName;
 
+  private Label wlIsHiddenName;
+  private FormData fdlIsHiddenName;
   private TextVar wIsHiddenName;
+  private FormData fdIsHiddenName;
+  private Label wlLastModificationTimeName;
+  private FormData fdlLastModificationTimeName;
   private TextVar wLastModificationTimeName;
+  private FormData fdLastModificationTimeName;
+  private Label wlUriName;
+  private FormData fdlUriName;
   private TextVar wUriName;
+  private FormData fdUriName;
+  private Label wlRootUriName;
+  private FormData fdlRootUriName;
   private TextVar wRootUriName;
+  private FormData fdRootUriName;
+  private Label wlExtensionFieldName;
+  private FormData fdlExtensionFieldName;
   private TextVar wExtensionFieldName;
+  private FormData fdExtensionFieldName;
+  private Label wlSizeFieldName;
+  private FormData fdlSizeFieldName;
   private TextVar wSizeFieldName;
+  private FormData fdSizeFieldName;
 
   private JsonInputMeta input;
 
@@ -176,7 +235,11 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     props.setLook( shell );
     setShellImage( shell, input );
 
-    lsMod = e -> input.setChanged();
+    lsMod = new ModifyListener() {
+      public void modifyText( ModifyEvent e ) {
+        input.setChanged();
+      }
+    };
     changed = input.hasChanged();
 
     FormLayout formLayout = new FormLayout();
@@ -219,7 +282,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
 
     addAdditionalFieldsTab();
 
-    FormData fdTabFolder = new FormData();
+    fdTabFolder = new FormData();
     fdTabFolder.left = new FormAttachment( 0, 0 );
     fdTabFolder.top = new FormAttachment( wStepname, margin );
     fdTabFolder.right = new FormAttachment( 100, 0 );
@@ -238,10 +301,26 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     setButtonPositions( new Button[] { wOK, wPreview, wCancel }, margin, wTabFolder );
 
     // Add listeners
-    lsOK = e -> ok();
-    lsGet = e -> get();
-    lsPreview = e -> preview();
-    lsCancel = e -> cancel();
+    lsOK = new Listener() {
+      public void handleEvent( Event e ) {
+        ok();
+      }
+    };
+    lsGet = new Listener() {
+      public void handleEvent( Event e ) {
+        get();
+      }
+    };
+    lsPreview = new Listener() {
+      public void handleEvent( Event e ) {
+        preview();
+      }
+    };
+    lsCancel = new Listener() {
+      public void handleEvent( Event e ) {
+        cancel();
+      }
+    };
 
     wOK.addListener( SWT.Selection, lsOK );
     wGet.addListener( SWT.Selection, lsGet );
@@ -249,7 +328,6 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wCancel.addListener( SWT.Selection, lsCancel );
 
     lsDef = new SelectionAdapter() {
-      @Override
       public void widgetDefaultSelected( SelectionEvent e ) {
         ok();
       }
@@ -262,12 +340,10 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
 
     // Add the file to the list of files...
     SelectionAdapter selA = new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent arg0 ) {
-        String[] items = new String[] {
+        wFilenameList.add( new String[] {
           wFilename.getText(), wFilemask.getText(), wExcludeFilemask.getText(),
-          JsonInputMeta.RequiredFilesCode[0], JsonInputMeta.RequiredFilesCode[0] };
-        wFilenameList.add( items );
+          JsonInputMeta.RequiredFilesCode[0], JsonInputMeta.RequiredFilesCode[0] } );
         wFilename.setText( "" );
         wFilemask.setText( "" );
         wExcludeFilemask.setText( "" );
@@ -281,7 +357,6 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
 
     // Delete files from the list of files...
     wbdFilename.addSelectionListener( new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent arg0 ) {
         int[] idx = wFilenameList.getSelectionIndices();
         wFilenameList.remove( idx );
@@ -292,7 +367,6 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
 
     // Edit the selected file & remove from the list...
     wbeFilename.addSelectionListener( new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent arg0 ) {
         int idx = wFilenameList.getSelectionIndex();
         if ( idx >= 0 ) {
@@ -309,7 +383,6 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
 
     // Show the files that are selected at this time...
     wbShowFiles.addSelectionListener( new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent e ) {
         try {
           JsonInputMeta tfii = new JsonInputMeta();
@@ -336,7 +409,6 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     } );
     // Enable/disable the right fields to allow a filename to be added to each row...
     wInclFilename.addSelectionListener( new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent e ) {
         setIncludeFilename();
       }
@@ -344,23 +416,55 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
 
     // Enable/disable the right fields to allow a row number to be added to each row...
     wInclRownum.addSelectionListener( new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent e ) {
         setIncludeRownum();
       }
     } );
 
     // Whenever something changes, set the tooltip to the expanded version of the filename:
-    wFilename.addModifyListener( e -> wFilename.setToolTipText( wFilename.getText() ) );
+    wFilename.addModifyListener( new ModifyListener() {
+      public void modifyText( ModifyEvent e ) {
+        wFilename.setToolTipText( wFilename.getText() );
+      }
+    } );
 
     // Listen to the Browse... button
-    wbbFilename.addSelectionListener( new SelectionAdapterFileDialogTextVar( log, wFilename, transMeta,
-      new SelectionAdapterOptions( SelectionOperation.FILE_OR_FOLDER,
-        new FilterType[] { FilterType.JSON, FilterType.JS, FilterType.ALL }, FilterType.JSON  ) ) );
+    wbbFilename.addSelectionListener( new SelectionAdapter() {
+      public void widgetSelected( SelectionEvent e ) {
+        if ( !Utils.isEmpty( wFilemask.getText() ) || !Utils.isEmpty( wExcludeFilemask.getText() ) ) { // A mask: a
+                                                                                                     // directory!
+          DirectoryDialog dialog = new DirectoryDialog( shell, SWT.OPEN );
+          if ( wFilename.getText() != null ) {
+            String fpath = transMeta.environmentSubstitute( wFilename.getText() );
+            dialog.setFilterPath( fpath );
+          }
+
+          if ( dialog.open() != null ) {
+            String str = dialog.getFilterPath();
+            wFilename.setText( str );
+          }
+        } else {
+          FileDialog dialog = new FileDialog( shell, SWT.OPEN );
+          dialog.setFilterExtensions( new String[] { "*.js;*.JS;*.json;*.JSON", "*" } );
+          if ( wFilename.getText() != null ) {
+            String fname = transMeta.environmentSubstitute( wFilename.getText() );
+            dialog.setFileName( fname );
+          }
+
+          dialog.setFilterNames( new String[] {
+            BaseMessages.getString( PKG, "System.FileType.JsonFiles" ),
+            BaseMessages.getString( PKG, "System.FileType.AllFiles" ) } );
+
+          if ( dialog.open() != null ) {
+            String str = dialog.getFilterPath() + System.getProperty( "file.separator" ) + dialog.getFileName();
+            wFilename.setText( str );
+          }
+        }
+      }
+    } );
 
     // Detect X or ALT-F4 or something that kills this window...
     shell.addShellListener( new ShellAdapter() {
-      @Override
       public void shellClosed( ShellEvent e ) {
         cancel();
       }
@@ -388,14 +492,15 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
 
   private void addFieldsTab() {
     // Fields tab...
-    CTabItem wFieldsTab = new CTabItem( wTabFolder, SWT.NONE );
+    //
+    wFieldsTab = new CTabItem( wTabFolder, SWT.NONE );
     wFieldsTab.setText( BaseMessages.getString( PKG, "JsonInputDialog.Fields.Tab" ) );
 
     FormLayout fieldsLayout = new FormLayout();
     fieldsLayout.marginWidth = Const.FORM_MARGIN;
     fieldsLayout.marginHeight = Const.FORM_MARGIN;
 
-    Composite wFieldsComp = new Composite( wTabFolder, SWT.NONE );
+    wFieldsComp = new Composite( wTabFolder, SWT.NONE );
     wFieldsComp.setLayout( fieldsLayout );
     props.setLook( wFieldsComp );
 
@@ -444,7 +549,10 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
           ColumnInfo.COLUMN_TYPE_CCOMBO, ValueMetaBase.trimTypeDesc, true ),
         new ColumnInfo(
           BaseMessages.getString( PKG, "JsonInputDialog.FieldsTable.Repeat.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] {YES, NO }, true ),
+          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] {
+            BaseMessages.getString( PKG, "System.Combo.Yes" ),
+            BaseMessages.getString( PKG, "System.Combo.No" ) }, true ),
+
       };
 
     colinf[0].setUsingVariables( true );
@@ -455,14 +563,14 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wFields =
       new TableView( transMeta, wFieldsComp, SWT.FULL_SELECTION | SWT.MULTI, colinf, FieldsRows, lsMod, props );
 
-    FormData fdFields = new FormData();
+    fdFields = new FormData();
     fdFields.left = new FormAttachment( 0, 0 );
     fdFields.top = new FormAttachment( 0, 0 );
     fdFields.right = new FormAttachment( 100, 0 );
     fdFields.bottom = new FormAttachment( wGet, -margin );
     wFields.setLayoutData( fdFields );
 
-    FormData fdFieldsComp = new FormData();
+    fdFieldsComp = new FormData();
     fdFieldsComp.left = new FormAttachment( 0, 0 );
     fdFieldsComp.top = new FormAttachment( 0, 0 );
     fdFieldsComp.right = new FormAttachment( 100, 0 );
@@ -477,14 +585,14 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // ////////////////////////
     // START OF CONTENT TAB///
     // /
-    CTabItem wContentTab = new CTabItem( wTabFolder, SWT.NONE );
+    wContentTab = new CTabItem( wTabFolder, SWT.NONE );
     wContentTab.setText( BaseMessages.getString( PKG, "JsonInputDialog.Content.Tab" ) );
 
     FormLayout contentLayout = new FormLayout();
     contentLayout.marginWidth = 3;
     contentLayout.marginHeight = 3;
 
-    Composite wContentComp = new Composite( wTabFolder, SWT.NONE );
+    wContentComp = new Composite( wTabFolder, SWT.NONE );
     props.setLook( wContentComp );
     wContentComp.setLayout( contentLayout );
 
@@ -492,21 +600,20 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // START OF Conf Field GROUP //
     // ///////////////////////////////
 
-    Group wConf = new Group( wContentComp, SWT.SHADOW_NONE );
+    wConf = new Group( wContentComp, SWT.SHADOW_NONE );
     props.setLook( wConf );
     wConf.setText( BaseMessages.getString( PKG, "JsonInputDialog.wConf.Label" ) );
 
-    FormLayout confgroupLayout = new FormLayout();
-    confgroupLayout.marginWidth = 10;
-    confgroupLayout.marginHeight = 10;
-    wConf.setLayout( confgroupLayout );
+    FormLayout ConfgroupLayout = new FormLayout();
+    ConfgroupLayout.marginWidth = 10;
+    ConfgroupLayout.marginHeight = 10;
+    wConf.setLayout( ConfgroupLayout );
 
     // Ignore Empty File
-    Label wlIgnoreEmptyFile = new Label( wConf, SWT.RIGHT );
+    wlIgnoreEmptyFile = new Label( wConf, SWT.RIGHT );
     wlIgnoreEmptyFile.setText( BaseMessages.getString( PKG, "JsonInputDialog.IgnoreEmptyFile.Label" ) );
     props.setLook( wlIgnoreEmptyFile );
-
-    FormData fdlIgnoreEmptyFile = new FormData();
+    fdlIgnoreEmptyFile = new FormData();
     fdlIgnoreEmptyFile.left = new FormAttachment( 0, 0 );
     fdlIgnoreEmptyFile.top = new FormAttachment( 0, margin );
     fdlIgnoreEmptyFile.right = new FormAttachment( middle, -margin );
@@ -514,18 +621,16 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wIgnoreEmptyFile = new Button( wConf, SWT.CHECK );
     props.setLook( wIgnoreEmptyFile );
     wIgnoreEmptyFile.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.IgnoreEmptyFile.Tooltip" ) );
-
-    FormData fdIgnoreEmptyFile = new FormData();
+    fdIgnoreEmptyFile = new FormData();
     fdIgnoreEmptyFile.left = new FormAttachment( middle, 0 );
     fdIgnoreEmptyFile.top = new FormAttachment( 0, margin );
     wIgnoreEmptyFile.setLayoutData( fdIgnoreEmptyFile );
 
     // do not fail if no files?
-    Label wldoNotFailIfNoFile = new Label( wConf, SWT.RIGHT );
+    wldoNotFailIfNoFile = new Label( wConf, SWT.RIGHT );
     wldoNotFailIfNoFile.setText( BaseMessages.getString( PKG, "JsonInputDialog.doNotFailIfNoFile.Label" ) );
     props.setLook( wldoNotFailIfNoFile );
-
-    FormData fdldoNotFailIfNoFile = new FormData();
+    fdldoNotFailIfNoFile = new FormData();
     fdldoNotFailIfNoFile.left = new FormAttachment( 0, 0 );
     fdldoNotFailIfNoFile.top = new FormAttachment( wIgnoreEmptyFile, margin );
     fdldoNotFailIfNoFile.right = new FormAttachment( middle, -margin );
@@ -533,18 +638,16 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wdoNotFailIfNoFile = new Button( wConf, SWT.CHECK );
     props.setLook( wdoNotFailIfNoFile );
     wdoNotFailIfNoFile.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.doNotFailIfNoFile.Tooltip" ) );
-
-    FormData fddoNotFailIfNoFile = new FormData();
+    fddoNotFailIfNoFile = new FormData();
     fddoNotFailIfNoFile.left = new FormAttachment( middle, 0 );
     fddoNotFailIfNoFile.top = new FormAttachment( wIgnoreEmptyFile, margin );
     wdoNotFailIfNoFile.setLayoutData( fddoNotFailIfNoFile );
 
     // Ignore missing path
-    Label wlIgnoreMissingPath = new Label( wConf, SWT.RIGHT );
+    wlIgnoreMissingPath = new Label( wConf, SWT.RIGHT );
     wlIgnoreMissingPath.setText( BaseMessages.getString( PKG, "JsonInputDialog.IgnoreMissingPath.Label" ) );
     props.setLook( wlIgnoreMissingPath );
-
-    FormData fdlIgnoreMissingPath = new FormData();
+    fdlIgnoreMissingPath = new FormData();
     fdlIgnoreMissingPath.left = new FormAttachment( 0, 0 );
     fdlIgnoreMissingPath.top = new FormAttachment( wdoNotFailIfNoFile, margin );
     fdlIgnoreMissingPath.right = new FormAttachment( middle, -margin );
@@ -552,24 +655,21 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wIgnoreMissingPath = new Button( wConf, SWT.CHECK );
     props.setLook( wIgnoreMissingPath );
     wIgnoreMissingPath.addSelectionListener( new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent e ) {
         input.setChanged();
       }
     } );
     wIgnoreMissingPath.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.IgnoreMissingPath.Tooltip" ) );
-
-    FormData fdIgnoreMissingPath = new FormData();
+    fdIgnoreMissingPath = new FormData();
     fdIgnoreMissingPath.left = new FormAttachment( middle, 0 );
     fdIgnoreMissingPath.top = new FormAttachment( wdoNotFailIfNoFile, margin );
     wIgnoreMissingPath.setLayoutData( fdIgnoreMissingPath );
 
     // default path leaf to null
-    Label wlDefaultPathLeafToNull = new Label( wConf, SWT.RIGHT );
+    wlDefaultPathLeafToNull = new Label( wConf, SWT.RIGHT );
     wlDefaultPathLeafToNull.setText( BaseMessages.getString( PKG, "JsonInputDialog.DefaultPathLeafToNull.Label" ) );
     props.setLook( wlDefaultPathLeafToNull );
-
-    FormData fdlDefaultPathLeafToNull = new FormData();
+    fdlDefaultPathLeafToNull = new FormData();
     fdlDefaultPathLeafToNull.left = new FormAttachment( 0, 0 );
     fdlDefaultPathLeafToNull.top = new FormAttachment( wIgnoreMissingPath, margin );
     fdlDefaultPathLeafToNull.right = new FormAttachment( middle, -margin );
@@ -577,14 +677,12 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wDefaultPathLeafToNull = new Button( wConf, SWT.CHECK );
     props.setLook( wDefaultPathLeafToNull );
     wDefaultPathLeafToNull.addSelectionListener( new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent e ) {
         input.setChanged();
       }
     } );
     wDefaultPathLeafToNull.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.DefaultPathLeafToNull.Tooltip" ) );
-
-    FormData fdDefaultPathLeafToNull = new FormData();
+    fdDefaultPathLeafToNull = new FormData();
     fdDefaultPathLeafToNull.left = new FormAttachment( middle, 0 );
     fdDefaultPathLeafToNull.top = new FormAttachment( wIgnoreMissingPath, margin );
     wDefaultPathLeafToNull.setLayoutData( fdDefaultPathLeafToNull );
@@ -593,8 +691,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlLimit = new Label( wConf, SWT.RIGHT );
     wlLimit.setText( BaseMessages.getString( PKG, "JsonInputDialog.Limit.Label" ) );
     props.setLook( wlLimit );
-
-    FormData fdlLimit = new FormData();
+    fdlLimit = new FormData();
     fdlLimit.left = new FormAttachment( 0, 0 );
     fdlLimit.top = new FormAttachment( wDefaultPathLeafToNull, margin );
     fdlLimit.right = new FormAttachment( middle, -margin );
@@ -602,14 +699,13 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wLimit = new Text( wConf, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wLimit );
     wLimit.addModifyListener( lsMod );
-
-    FormData fdLimit = new FormData();
+    fdLimit = new FormData();
     fdLimit.left = new FormAttachment( middle, 0 );
     fdLimit.top = new FormAttachment( wDefaultPathLeafToNull, margin );
     fdLimit.right = new FormAttachment( 100, 0 );
     wLimit.setLayoutData( fdLimit );
 
-    FormData fdConf = new FormData();
+    fdConf = new FormData();
     fdConf.left = new FormAttachment( 0, margin );
     fdConf.top = new FormAttachment( 0, margin );
     fdConf.right = new FormAttachment( 100, -margin );
@@ -623,20 +719,19 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // START OF Additional Fields GROUP //
     // ///////////////////////////////
 
-    Group wAdditionalFields = new Group( wContentComp, SWT.SHADOW_NONE );
+    wAdditionalFields = new Group( wContentComp, SWT.SHADOW_NONE );
     props.setLook( wAdditionalFields );
     wAdditionalFields.setText( BaseMessages.getString( PKG, "JsonInputDialog.wAdditionalFields.Label" ) );
 
-    FormLayout additionalFieldsgroupLayout = new FormLayout();
-    additionalFieldsgroupLayout.marginWidth = 10;
-    additionalFieldsgroupLayout.marginHeight = 10;
-    wAdditionalFields.setLayout( additionalFieldsgroupLayout );
+    FormLayout AdditionalFieldsgroupLayout = new FormLayout();
+    AdditionalFieldsgroupLayout.marginWidth = 10;
+    AdditionalFieldsgroupLayout.marginHeight = 10;
+    wAdditionalFields.setLayout( AdditionalFieldsgroupLayout );
 
     wlInclFilename = new Label( wAdditionalFields, SWT.RIGHT );
     wlInclFilename.setText( BaseMessages.getString( PKG, "JsonInputDialog.InclFilename.Label" ) );
     props.setLook( wlInclFilename );
-
-    FormData fdlInclFilename = new FormData();
+    fdlInclFilename = new FormData();
     fdlInclFilename.left = new FormAttachment( 0, 0 );
     fdlInclFilename.top = new FormAttachment( wConf, 4 * margin );
     fdlInclFilename.right = new FormAttachment( middle, -margin );
@@ -644,8 +739,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wInclFilename = new Button( wAdditionalFields, SWT.CHECK );
     props.setLook( wInclFilename );
     wInclFilename.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.InclFilename.Tooltip" ) );
-
-    FormData fdInclFilename = new FormData();
+    fdInclFilename = new FormData();
     fdInclFilename.left = new FormAttachment( middle, 0 );
     fdInclFilename.top = new FormAttachment( wConf, 4 * margin );
     wInclFilename.setLayoutData( fdInclFilename );
@@ -653,26 +747,23 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlInclFilenameField = new Label( wAdditionalFields, SWT.LEFT );
     wlInclFilenameField.setText( BaseMessages.getString( PKG, "JsonInputDialog.InclFilenameField.Label" ) );
     props.setLook( wlInclFilenameField );
-
-    FormData fdlInclFilenameField = new FormData();
+    fdlInclFilenameField = new FormData();
     fdlInclFilenameField.left = new FormAttachment( wInclFilename, margin );
     fdlInclFilenameField.top = new FormAttachment( wLimit, 4 * margin );
     wlInclFilenameField.setLayoutData( fdlInclFilenameField );
     wInclFilenameField = new TextVar( transMeta, wAdditionalFields, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wInclFilenameField );
     wInclFilenameField.addModifyListener( lsMod );
-
-    FormData fdInclFilenameField = new FormData();
+    fdInclFilenameField = new FormData();
     fdInclFilenameField.left = new FormAttachment( wlInclFilenameField, margin );
     fdInclFilenameField.top = new FormAttachment( wLimit, 4 * margin );
     fdInclFilenameField.right = new FormAttachment( 100, 0 );
     wInclFilenameField.setLayoutData( fdInclFilenameField );
 
-    Label wlInclRownum = new Label( wAdditionalFields, SWT.RIGHT );
+    wlInclRownum = new Label( wAdditionalFields, SWT.RIGHT );
     wlInclRownum.setText( BaseMessages.getString( PKG, "JsonInputDialog.InclRownum.Label" ) );
     props.setLook( wlInclRownum );
-
-    FormData fdlInclRownum = new FormData();
+    fdlInclRownum = new FormData();
     fdlInclRownum.left = new FormAttachment( 0, 0 );
     fdlInclRownum.top = new FormAttachment( wInclFilenameField, margin );
     fdlInclRownum.right = new FormAttachment( middle, -margin );
@@ -680,8 +771,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wInclRownum = new Button( wAdditionalFields, SWT.CHECK );
     props.setLook( wInclRownum );
     wInclRownum.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.InclRownum.Tooltip" ) );
-
-    FormData fdRownum = new FormData();
+    fdRownum = new FormData();
     fdRownum.left = new FormAttachment( middle, 0 );
     fdRownum.top = new FormAttachment( wInclFilenameField, margin );
     wInclRownum.setLayoutData( fdRownum );
@@ -689,22 +779,20 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlInclRownumField = new Label( wAdditionalFields, SWT.RIGHT );
     wlInclRownumField.setText( BaseMessages.getString( PKG, "JsonInputDialog.InclRownumField.Label" ) );
     props.setLook( wlInclRownumField );
-
-    FormData fdlInclRownumField = new FormData();
+    fdlInclRownumField = new FormData();
     fdlInclRownumField.left = new FormAttachment( wInclRownum, margin );
     fdlInclRownumField.top = new FormAttachment( wInclFilenameField, margin );
     wlInclRownumField.setLayoutData( fdlInclRownumField );
     wInclRownumField = new TextVar( transMeta, wAdditionalFields, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wInclRownumField );
     wInclRownumField.addModifyListener( lsMod );
-
-    FormData fdInclRownumField = new FormData();
+    fdInclRownumField = new FormData();
     fdInclRownumField.left = new FormAttachment( wlInclRownumField, margin );
     fdInclRownumField.top = new FormAttachment( wInclFilenameField, margin );
     fdInclRownumField.right = new FormAttachment( 100, 0 );
     wInclRownumField.setLayoutData( fdInclRownumField );
 
-    FormData fdAdditionalFields = new FormData();
+    fdAdditionalFields = new FormData();
     fdAdditionalFields.left = new FormAttachment( 0, margin );
     fdAdditionalFields.top = new FormAttachment( wConf, margin );
     fdAdditionalFields.right = new FormAttachment( 100, -margin );
@@ -718,20 +806,19 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // START OF AddFileResult GROUP //
     // ///////////////////////////////
 
-    Group wAddFileResult = new Group( wContentComp, SWT.SHADOW_NONE );
+    wAddFileResult = new Group( wContentComp, SWT.SHADOW_NONE );
     props.setLook( wAddFileResult );
     wAddFileResult.setText( BaseMessages.getString( PKG, "JsonInputDialog.wAddFileResult.Label" ) );
 
-    FormLayout addFileResultgroupLayout = new FormLayout();
-    addFileResultgroupLayout.marginWidth = 10;
-    addFileResultgroupLayout.marginHeight = 10;
-    wAddFileResult.setLayout( addFileResultgroupLayout );
+    FormLayout AddFileResultgroupLayout = new FormLayout();
+    AddFileResultgroupLayout.marginWidth = 10;
+    AddFileResultgroupLayout.marginHeight = 10;
+    wAddFileResult.setLayout( AddFileResultgroupLayout );
 
     wlAddResult = new Label( wAddFileResult, SWT.RIGHT );
     wlAddResult.setText( BaseMessages.getString( PKG, "JsonInputDialog.AddResult.Label" ) );
     props.setLook( wlAddResult );
-
-    FormData fdlAddResult = new FormData();
+    fdlAddResult = new FormData();
     fdlAddResult.left = new FormAttachment( 0, 0 );
     fdlAddResult.top = new FormAttachment( wAdditionalFields, margin );
     fdlAddResult.right = new FormAttachment( middle, -margin );
@@ -739,13 +826,12 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wAddResult = new Button( wAddFileResult, SWT.CHECK );
     props.setLook( wAddResult );
     wAddResult.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.AddResult.Tooltip" ) );
-
-    FormData fdAddResult = new FormData();
+    fdAddResult = new FormData();
     fdAddResult.left = new FormAttachment( middle, 0 );
     fdAddResult.top = new FormAttachment( wAdditionalFields, margin );
     wAddResult.setLayoutData( fdAddResult );
 
-    FormData fdAddFileResult = new FormData();
+    fdAddFileResult = new FormData();
     fdAddFileResult.left = new FormAttachment( 0, margin );
     fdAddFileResult.top = new FormAttachment( wAdditionalFields, margin );
     fdAddFileResult.right = new FormAttachment( 100, -margin );
@@ -755,7 +841,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // / END OF AddFileResult GROUP
     // ///////////////////////////////////////////////////////////
 
-    FormData fdContentComp = new FormData();
+    fdContentComp = new FormData();
     fdContentComp.left = new FormAttachment( 0, 0 );
     fdContentComp.top = new FormAttachment( 0, 0 );
     fdContentComp.right = new FormAttachment( 100, 0 );
@@ -774,10 +860,10 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // ////////////////////////
     // START OF FILE TAB ///
     // ////////////////////////
-    CTabItem wFileTab = new CTabItem( wTabFolder, SWT.NONE );
+    wFileTab = new CTabItem( wTabFolder, SWT.NONE );
     wFileTab.setText( BaseMessages.getString( PKG, "JsonInputDialog.File.Tab" ) );
 
-    Composite wFileComp = new Composite( wTabFolder, SWT.NONE );
+    wFileComp = new Composite( wTabFolder, SWT.NONE );
     props.setLook( wFileComp );
 
     FormLayout fileLayout = new FormLayout();
@@ -789,7 +875,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // START OF Output Field GROUP //
     // ///////////////////////////////
 
-    Group wOutputField = new Group( wFileComp, SWT.SHADOW_NONE );
+    wOutputField = new Group( wFileComp, SWT.SHADOW_NONE );
     props.setLook( wOutputField );
     wOutputField.setText( BaseMessages.getString( PKG, "JsonInputDialog.wOutputField.Label" ) );
 
@@ -799,11 +885,10 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wOutputField.setLayout( outputfieldgroupLayout );
 
     // Is source string defined in a Field
-    Label wlSourceStreamField = new Label( wOutputField, SWT.RIGHT );
+    wlSourceStreamField = new Label( wOutputField, SWT.RIGHT );
     wlSourceStreamField.setText( BaseMessages.getString( PKG, "JsonInputDialog.wlSourceStreamField.Label" ) );
     props.setLook( wlSourceStreamField );
-
-    FormData fdlSourceStreamField = new FormData();
+    fdlSourceStreamField = new FormData();
     fdlSourceStreamField.left = new FormAttachment( 0, -margin );
     fdlSourceStreamField.top = new FormAttachment( 0, margin );
     fdlSourceStreamField.right = new FormAttachment( middle, -2 * margin );
@@ -813,13 +898,11 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     props.setLook( wSourceStreamField );
     wSourceStreamField
       .setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.wSourceStreamField.Tooltip" ) );
-
-    FormData fdSourceStreamField = new FormData();
+    fdSourceStreamField = new FormData();
     fdSourceStreamField.left = new FormAttachment( middle, -margin );
     fdSourceStreamField.top = new FormAttachment( 0, margin );
     wSourceStreamField.setLayoutData( fdSourceStreamField );
     SelectionAdapter lsstream = new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent arg0 ) {
         activeStreamField();
         input.setChanged();
@@ -831,8 +914,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlSourceField = new Label( wOutputField, SWT.RIGHT );
     wlSourceField.setText( BaseMessages.getString( PKG, "JsonInputDialog.wlSourceField.Label" ) );
     props.setLook( wlSourceField );
-
-    FormData fdlFieldValue = new FormData();
+    fdlFieldValue = new FormData();
     fdlFieldValue.left = new FormAttachment( 0, -margin );
     fdlFieldValue.top = new FormAttachment( wSourceStreamField, margin );
     fdlFieldValue.right = new FormAttachment( middle, -2 * margin );
@@ -842,15 +924,14 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wFieldValue.setEditable( true );
     props.setLook( wFieldValue );
     wFieldValue.addModifyListener( lsMod );
-
-    FormData fdFieldValue = new FormData();
+    fdFieldValue = new FormData();
     fdFieldValue.left = new FormAttachment( middle, -margin );
     fdFieldValue.top = new FormAttachment( wSourceStreamField, margin );
     fdFieldValue.right = new FormAttachment( 100, -margin );
     wFieldValue.setLayoutData( fdFieldValue );
     setSourceStreamField();
 
-    FormData fdOutputField = new FormData();
+    fdOutputField = new FormData();
     fdOutputField.left = new FormAttachment( 0, margin );
     fdOutputField.top = new FormAttachment( wFilenameList, margin );
     fdOutputField.right = new FormAttachment( 100, -margin );
@@ -860,8 +941,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlSourceIsAFile = new Label( wOutputField, SWT.RIGHT );
     wlSourceIsAFile.setText( BaseMessages.getString( PKG, "JsonInputDialog.SourceIsAFile.Label" ) );
     props.setLook( wlSourceIsAFile );
-
-    FormData fdlSourceIsAFile = new FormData();
+    fdlSourceIsAFile = new FormData();
     fdlSourceIsAFile.left = new FormAttachment( 0, -margin );
     fdlSourceIsAFile.top = new FormAttachment( wFieldValue, margin );
     fdlSourceIsAFile.right = new FormAttachment( middle, -2 * margin );
@@ -870,13 +950,11 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wSourceIsAFile = new Button( wOutputField, SWT.CHECK );
     props.setLook( wSourceIsAFile );
     wSourceIsAFile.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.SourceIsAFile.Tooltip" ) );
-
-    FormData fdSourceIsAFile = new FormData();
+    fdSourceIsAFile = new FormData();
     fdSourceIsAFile.left = new FormAttachment( middle, -margin );
     fdSourceIsAFile.top = new FormAttachment( wFieldValue, margin );
     wSourceIsAFile.setLayoutData( fdSourceIsAFile );
     SelectionAdapter lssourceisafile = new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent arg0 ) {
         if ( wSourceIsAFile.getSelection() ) {
           wreadUrl.setSelection( false );
@@ -890,8 +968,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlreadUrl = new Label( wOutputField, SWT.RIGHT );
     wlreadUrl.setText( BaseMessages.getString( PKG, "JsonInputDialog.readUrl.Label" ) );
     props.setLook( wlreadUrl );
-
-    FormData fdlreadUrl = new FormData();
+    fdlreadUrl = new FormData();
     fdlreadUrl.left = new FormAttachment( 0, -margin );
     fdlreadUrl.top = new FormAttachment( wlSourceIsAFile, margin );
     fdlreadUrl.right = new FormAttachment( middle, -2 * margin );
@@ -899,13 +976,11 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wreadUrl = new Button( wOutputField, SWT.CHECK );
     props.setLook( wreadUrl );
     wreadUrl.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.readUrl.Tooltip" ) );
-
-    FormData fdreadUrl = new FormData();
+    fdreadUrl = new FormData();
     fdreadUrl.left = new FormAttachment( middle, -margin );
     fdreadUrl.top = new FormAttachment( wlSourceIsAFile, margin );
     wreadUrl.setLayoutData( fdreadUrl );
     SelectionAdapter lsreadurl = new SelectionAdapter() {
-      @Override
       public void widgetSelected( SelectionEvent arg0 ) {
         if ( wreadUrl.getSelection() ) {
           wSourceIsAFile.setSelection( false );
@@ -919,16 +994,14 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlremoveSourceField = new Label( wOutputField, SWT.RIGHT );
     wlremoveSourceField.setText( BaseMessages.getString( PKG, "JsonInputDialog.removeSourceField.Label" ) );
     props.setLook( wlremoveSourceField );
-
-    FormData fdlremoveSourceField = new FormData();
+    fdlremoveSourceField = new FormData();
     fdlremoveSourceField.left = new FormAttachment( 0, -margin );
     fdlremoveSourceField.top = new FormAttachment( wlreadUrl, margin );
     fdlremoveSourceField.right = new FormAttachment( middle, -2 * margin );
     wlremoveSourceField.setLayoutData( fdlremoveSourceField );
     wremoveSourceField = new Button( wOutputField, SWT.CHECK );
     props.setLook( wremoveSourceField );
-
-    FormData fdremoveSourceField = new FormData();
+    fdremoveSourceField = new FormData();
     fdremoveSourceField.left = new FormAttachment( middle, -margin );
     fdremoveSourceField.top = new FormAttachment( wlreadUrl, margin );
     wremoveSourceField.setLayoutData( fdremoveSourceField );
@@ -947,8 +1020,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlFilename = new Label( wFileComp, SWT.RIGHT );
     wlFilename.setText( BaseMessages.getString( PKG, "JsonInputDialog.Filename.Label" ) );
     props.setLook( wlFilename );
-
-    FormData fdlFilename = new FormData();
+    fdlFilename = new FormData();
     fdlFilename.left = new FormAttachment( 0, 0 );
     fdlFilename.top = new FormAttachment( wOutputField, margin );
     fdlFilename.right = new FormAttachment( middle, -margin );
@@ -958,8 +1030,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     props.setLook( wbbFilename );
     wbbFilename.setText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameBrowse.Button" ) );
     wbbFilename.setToolTipText( BaseMessages.getString( PKG, "System.Tooltip.BrowseForFileOrDirAndAdd" ) );
-
-    FormData fdbFilename = new FormData();
+    fdbFilename = new FormData();
     fdbFilename.right = new FormAttachment( 100, 0 );
     fdbFilename.top = new FormAttachment( wOutputField, margin );
     wbbFilename.setLayoutData( fdbFilename );
@@ -968,8 +1039,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     props.setLook( wbaFilename );
     wbaFilename.setText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameAdd.Button" ) );
     wbaFilename.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameAdd.Tooltip" ) );
-
-    FormData fdbaFilename = new FormData();
+    fdbaFilename = new FormData();
     fdbaFilename.right = new FormAttachment( wbbFilename, -margin );
     fdbaFilename.top = new FormAttachment( wOutputField, margin );
     wbaFilename.setLayoutData( fdbaFilename );
@@ -977,8 +1047,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wFilename = new TextVar( transMeta, wFileComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wFilename );
     wFilename.addModifyListener( lsMod );
-
-    FormData fdFilename = new FormData();
+    fdFilename = new FormData();
     fdFilename.left = new FormAttachment( middle, 0 );
     fdFilename.right = new FormAttachment( wbaFilename, -margin );
     fdFilename.top = new FormAttachment( wOutputField, margin );
@@ -987,8 +1056,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlFilemask = new Label( wFileComp, SWT.RIGHT );
     wlFilemask.setText( BaseMessages.getString( PKG, "JsonInputDialog.RegExp.Label" ) );
     props.setLook( wlFilemask );
-
-    FormData fdlFilemask = new FormData();
+    fdlFilemask = new FormData();
     fdlFilemask.left = new FormAttachment( 0, 0 );
     fdlFilemask.top = new FormAttachment( wFilename, margin );
     fdlFilemask.right = new FormAttachment( middle, -margin );
@@ -996,8 +1064,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wFilemask = new TextVar( transMeta, wFileComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wFilemask );
     wFilemask.addModifyListener( lsMod );
-
-    FormData fdFilemask = new FormData();
+    fdFilemask = new FormData();
     fdFilemask.left = new FormAttachment( middle, 0 );
     fdFilemask.top = new FormAttachment( wFilename, margin );
     fdFilemask.right = new FormAttachment( 100, 0 );
@@ -1006,8 +1073,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlExcludeFilemask = new Label( wFileComp, SWT.RIGHT );
     wlExcludeFilemask.setText( BaseMessages.getString( PKG, "JsonInputDialog.ExcludeFilemask.Label" ) );
     props.setLook( wlExcludeFilemask );
-
-    FormData fdlExcludeFilemask = new FormData();
+    fdlExcludeFilemask = new FormData();
     fdlExcludeFilemask.left = new FormAttachment( 0, 0 );
     fdlExcludeFilemask.top = new FormAttachment( wFilemask, margin );
     fdlExcludeFilemask.right = new FormAttachment( middle, -margin );
@@ -1015,8 +1081,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wExcludeFilemask = new TextVar( transMeta, wFileComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wExcludeFilemask );
     wExcludeFilemask.addModifyListener( lsMod );
-
-    FormData fdExcludeFilemask = new FormData();
+    fdExcludeFilemask = new FormData();
     fdExcludeFilemask.left = new FormAttachment( middle, 0 );
     fdExcludeFilemask.top = new FormAttachment( wFilemask, margin );
     fdExcludeFilemask.right = new FormAttachment( wFilename, 0, SWT.RIGHT );
@@ -1026,8 +1091,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wlFilenameList = new Label( wFileComp, SWT.RIGHT );
     wlFilenameList.setText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameList.Label" ) );
     props.setLook( wlFilenameList );
-
-    FormData fdlFilenameList = new FormData();
+    fdlFilenameList = new FormData();
     fdlFilenameList.left = new FormAttachment( 0, 0 );
     fdlFilenameList.top = new FormAttachment( wExcludeFilemask, margin );
     fdlFilenameList.right = new FormAttachment( middle, -margin );
@@ -1038,8 +1102,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     props.setLook( wbdFilename );
     wbdFilename.setText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameRemove.Button" ) );
     wbdFilename.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameRemove.Tooltip" ) );
-
-    FormData fdbdFilename = new FormData();
+    fdbdFilename = new FormData();
     fdbdFilename.right = new FormAttachment( 100, 0 );
     fdbdFilename.top = new FormAttachment( wExcludeFilemask, 40 );
     wbdFilename.setLayoutData( fdbdFilename );
@@ -1048,8 +1111,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     props.setLook( wbeFilename );
     wbeFilename.setText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameEdit.Button" ) );
     wbeFilename.setToolTipText( BaseMessages.getString( PKG, "JsonInputDialog.FilenameEdit.Tooltip" ) );
-
-    FormData fdbeFilename = new FormData();
+    fdbeFilename = new FormData();
     fdbeFilename.right = new FormAttachment( 100, 0 );
     fdbeFilename.left = new FormAttachment( wbdFilename, 0, SWT.LEFT );
     fdbeFilename.top = new FormAttachment( wbdFilename, margin );
@@ -1058,8 +1120,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wbShowFiles = new Button( wFileComp, SWT.PUSH | SWT.CENTER );
     props.setLook( wbShowFiles );
     wbShowFiles.setText( BaseMessages.getString( PKG, "JsonInputDialog.ShowFiles.Button" ) );
-
-    FormData fdbShowFiles = new FormData();
+    fdbShowFiles = new FormData();
     fdbShowFiles.left = new FormAttachment( middle, 0 );
     fdbShowFiles.bottom = new FormAttachment( 100, 0 );
     wbShowFiles.setLayoutData( fdbShowFiles );
@@ -1098,15 +1159,14 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
       new TableView(
         transMeta, wFileComp, SWT.FULL_SELECTION | SWT.SINGLE | SWT.BORDER, colinfo, 2, lsMod, props );
     props.setLook( wFilenameList );
-
-    FormData fdFilenameList = new FormData();
+    fdFilenameList = new FormData();
     fdFilenameList.left = new FormAttachment( middle, 0 );
     fdFilenameList.right = new FormAttachment( wbdFilename, -margin );
     fdFilenameList.top = new FormAttachment( wExcludeFilemask, margin );
     fdFilenameList.bottom = new FormAttachment( wbShowFiles, -margin );
     wFilenameList.setLayoutData( fdFilenameList );
 
-    FormData fdFileComp = new FormData();
+    fdFileComp = new FormData();
     fdFileComp.left = new FormAttachment( 0, 0 );
     fdFileComp.top = new FormAttachment( 0, 0 );
     fdFileComp.right = new FormAttachment( 100, 0 );
@@ -1186,6 +1246,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
   }
 
   private void setCompositeEnabled( Composite comp, boolean enabled ) {
+    // TODO: move to TableView?
     comp.setEnabled( enabled );
     for ( Control child : comp.getChildren() ) {
       child.setEnabled( enabled );
@@ -1213,11 +1274,10 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
       wFilenameList.removeAll();
 
       for ( int i = 0; i < in.getFileName().length; i++ ) {
-        String[] items = new String[] {
+        wFilenameList.add( new String[] {
           in.getFileName()[i], in.getFileMask()[i], in.getExcludeFileMask()[i],
           in.getRequiredFilesDesc( in.getFileRequired()[i] ),
-          in.getRequiredFilesDesc( in.getIncludeSubFolders()[i] ) };
-        wFilenameList.add( items );
+          in.getRequiredFilesDesc( in.getIncludeSubFolders()[i] ) } );
       }
 
       wFilenameList.removeEmptyRows();
@@ -1267,7 +1327,8 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
         String decim = field.getDecimalSymbol();
         String trim = field.getTrimTypeDesc();
         String rep =
-          field.isRepeated() ? YES : NO;
+          field.isRepeated() ? BaseMessages.getString( PKG, "System.Combo.Yes" ) : BaseMessages.getString(
+            PKG, "System.Combo.No" );
 
         if ( name != null ) {
           item.setText( 1, name );
@@ -1403,7 +1464,7 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
       field.setDecimalSymbol( item.getText( 8 ) );
       field.setGroupSymbol( item.getText( 9 ) );
       field.setTrimType( ValueMetaBase.getTrimTypeByDesc( item.getText( 10 ) ) );
-      field.setRepeated( YES.equalsIgnoreCase( item.getText( 11 ) ) );
+      field.setRepeated( BaseMessages.getString( PKG, "System.Combo.Yes" ).equalsIgnoreCase( item.getText( 11 ) ) );
 
       in.getInputFields()[i] = field;
     }
@@ -1502,10 +1563,10 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     // ////////////////////////
     // START OF ADDITIONAL FIELDS TAB ///
     // ////////////////////////
-    CTabItem wAdditionalFieldsTab = new CTabItem( wTabFolder, SWT.NONE );
+    wAdditionalFieldsTab = new CTabItem( wTabFolder, SWT.NONE );
     wAdditionalFieldsTab.setText( BaseMessages.getString( PKG, "JsonInputDialog.AdditionalFieldsTab.TabTitle" ) );
 
-    Composite wAdditionalFieldsComp = new Composite( wTabFolder, SWT.NONE );
+    wAdditionalFieldsComp = new Composite( wTabFolder, SWT.NONE );
     props.setLook( wAdditionalFieldsComp );
 
     FormLayout fieldsLayout = new FormLayout();
@@ -1513,12 +1574,10 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     fieldsLayout.marginHeight = 3;
     wAdditionalFieldsComp.setLayout( fieldsLayout );
     // ShortFileFieldName line
-
-    Label wlShortFileFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlShortFileFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlShortFileFieldName.setText( BaseMessages.getString( PKG, "JsonInputDialog.ShortFileFieldName.Label" ) );
     props.setLook( wlShortFileFieldName );
-
-    FormData fdlShortFileFieldName = new FormData();
+    fdlShortFileFieldName = new FormData();
     fdlShortFileFieldName.left = new FormAttachment( 0, 0 );
     fdlShortFileFieldName.top = new FormAttachment( wInclRownumField, margin );
     fdlShortFileFieldName.right = new FormAttachment( middle, -margin );
@@ -1527,19 +1586,17 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wShortFileFieldName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wShortFileFieldName );
     wShortFileFieldName.addModifyListener( lsMod );
-
-    FormData fdShortFileFieldName = new FormData();
+    fdShortFileFieldName = new FormData();
     fdShortFileFieldName.left = new FormAttachment( middle, 0 );
     fdShortFileFieldName.right = new FormAttachment( 100, -margin );
     fdShortFileFieldName.top = new FormAttachment( wInclRownumField, margin );
     wShortFileFieldName.setLayoutData( fdShortFileFieldName );
 
     // ExtensionFieldName line
-    Label wlExtensionFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlExtensionFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlExtensionFieldName.setText( BaseMessages.getString( PKG, "JsonInputDialog.ExtensionFieldName.Label" ) );
     props.setLook( wlExtensionFieldName );
-
-    FormData fdlExtensionFieldName = new FormData();
+    fdlExtensionFieldName = new FormData();
     fdlExtensionFieldName.left = new FormAttachment( 0, 0 );
     fdlExtensionFieldName.top = new FormAttachment( wShortFileFieldName, margin );
     fdlExtensionFieldName.right = new FormAttachment( middle, -margin );
@@ -1548,19 +1605,17 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wExtensionFieldName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wExtensionFieldName );
     wExtensionFieldName.addModifyListener( lsMod );
-
-    FormData fdExtensionFieldName = new FormData();
+    fdExtensionFieldName = new FormData();
     fdExtensionFieldName.left = new FormAttachment( middle, 0 );
     fdExtensionFieldName.right = new FormAttachment( 100, -margin );
     fdExtensionFieldName.top = new FormAttachment( wShortFileFieldName, margin );
     wExtensionFieldName.setLayoutData( fdExtensionFieldName );
 
     // PathFieldName line
-    Label wlPathFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlPathFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlPathFieldName.setText( BaseMessages.getString( PKG, "JsonInputDialog.PathFieldName.Label" ) );
     props.setLook( wlPathFieldName );
-
-    FormData fdlPathFieldName = new FormData();
+    fdlPathFieldName = new FormData();
     fdlPathFieldName.left = new FormAttachment( 0, 0 );
     fdlPathFieldName.top = new FormAttachment( wExtensionFieldName, margin );
     fdlPathFieldName.right = new FormAttachment( middle, -margin );
@@ -1569,19 +1624,17 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wPathFieldName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wPathFieldName );
     wPathFieldName.addModifyListener( lsMod );
-
-    FormData fdPathFieldName = new FormData();
+    fdPathFieldName = new FormData();
     fdPathFieldName.left = new FormAttachment( middle, 0 );
     fdPathFieldName.right = new FormAttachment( 100, -margin );
     fdPathFieldName.top = new FormAttachment( wExtensionFieldName, margin );
     wPathFieldName.setLayoutData( fdPathFieldName );
 
     // SizeFieldName line
-    Label wlSizeFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlSizeFieldName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlSizeFieldName.setText( BaseMessages.getString( PKG, "JsonInputDialog.SizeFieldName.Label" ) );
     props.setLook( wlSizeFieldName );
-
-    FormData fdlSizeFieldName = new FormData();
+    fdlSizeFieldName = new FormData();
     fdlSizeFieldName.left = new FormAttachment( 0, 0 );
     fdlSizeFieldName.top = new FormAttachment( wPathFieldName, margin );
     fdlSizeFieldName.right = new FormAttachment( middle, -margin );
@@ -1590,19 +1643,17 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wSizeFieldName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wSizeFieldName );
     wSizeFieldName.addModifyListener( lsMod );
-
-    FormData fdSizeFieldName = new FormData();
+    fdSizeFieldName = new FormData();
     fdSizeFieldName.left = new FormAttachment( middle, 0 );
     fdSizeFieldName.right = new FormAttachment( 100, -margin );
     fdSizeFieldName.top = new FormAttachment( wPathFieldName, margin );
     wSizeFieldName.setLayoutData( fdSizeFieldName );
 
     // IsHiddenName line
-    Label wlIsHiddenName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlIsHiddenName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlIsHiddenName.setText( BaseMessages.getString( PKG, "JsonInputDialog.IsHiddenName.Label" ) );
     props.setLook( wlIsHiddenName );
-
-    FormData fdlIsHiddenName = new FormData();
+    fdlIsHiddenName = new FormData();
     fdlIsHiddenName.left = new FormAttachment( 0, 0 );
     fdlIsHiddenName.top = new FormAttachment( wSizeFieldName, margin );
     fdlIsHiddenName.right = new FormAttachment( middle, -margin );
@@ -1611,20 +1662,18 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wIsHiddenName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wIsHiddenName );
     wIsHiddenName.addModifyListener( lsMod );
-
-    FormData fdIsHiddenName = new FormData();
+    fdIsHiddenName = new FormData();
     fdIsHiddenName.left = new FormAttachment( middle, 0 );
     fdIsHiddenName.right = new FormAttachment( 100, -margin );
     fdIsHiddenName.top = new FormAttachment( wSizeFieldName, margin );
     wIsHiddenName.setLayoutData( fdIsHiddenName );
 
     // LastModificationTimeName line
-    Label wlLastModificationTimeName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlLastModificationTimeName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlLastModificationTimeName.setText( BaseMessages.getString(
       PKG, "JsonInputDialog.LastModificationTimeName.Label" ) );
     props.setLook( wlLastModificationTimeName );
-
-    FormData fdlLastModificationTimeName = new FormData();
+    fdlLastModificationTimeName = new FormData();
     fdlLastModificationTimeName.left = new FormAttachment( 0, 0 );
     fdlLastModificationTimeName.top = new FormAttachment( wIsHiddenName, margin );
     fdlLastModificationTimeName.right = new FormAttachment( middle, -margin );
@@ -1633,19 +1682,17 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wLastModificationTimeName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wLastModificationTimeName );
     wLastModificationTimeName.addModifyListener( lsMod );
-
-    FormData fdLastModificationTimeName = new FormData();
+    fdLastModificationTimeName = new FormData();
     fdLastModificationTimeName.left = new FormAttachment( middle, 0 );
     fdLastModificationTimeName.right = new FormAttachment( 100, -margin );
     fdLastModificationTimeName.top = new FormAttachment( wIsHiddenName, margin );
     wLastModificationTimeName.setLayoutData( fdLastModificationTimeName );
 
     // UriName line
-    Label wlUriName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlUriName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlUriName.setText( BaseMessages.getString( PKG, "JsonInputDialog.UriName.Label" ) );
     props.setLook( wlUriName );
-
-    FormData fdlUriName = new FormData();
+    fdlUriName = new FormData();
     fdlUriName.left = new FormAttachment( 0, 0 );
     fdlUriName.top = new FormAttachment( wLastModificationTimeName, margin );
     fdlUriName.right = new FormAttachment( middle, -margin );
@@ -1654,19 +1701,17 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wUriName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wUriName );
     wUriName.addModifyListener( lsMod );
-
-    FormData fdUriName = new FormData();
+    fdUriName = new FormData();
     fdUriName.left = new FormAttachment( middle, 0 );
     fdUriName.right = new FormAttachment( 100, -margin );
     fdUriName.top = new FormAttachment( wLastModificationTimeName, margin );
     wUriName.setLayoutData( fdUriName );
 
     // RootUriName line
-    Label wlRootUriName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
+    wlRootUriName = new Label( wAdditionalFieldsComp, SWT.RIGHT );
     wlRootUriName.setText( BaseMessages.getString( PKG, "JsonInputDialog.RootUriName.Label" ) );
     props.setLook( wlRootUriName );
-
-    FormData fdlRootUriName = new FormData();
+    fdlRootUriName = new FormData();
     fdlRootUriName.left = new FormAttachment( 0, 0 );
     fdlRootUriName.top = new FormAttachment( wUriName, margin );
     fdlRootUriName.right = new FormAttachment( middle, -margin );
@@ -1675,14 +1720,13 @@ public class JsonInputDialog extends BaseStepDialog implements StepDialogInterfa
     wRootUriName = new TextVar( transMeta, wAdditionalFieldsComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wRootUriName );
     wRootUriName.addModifyListener( lsMod );
-
-    FormData fdRootUriName = new FormData();
+    fdRootUriName = new FormData();
     fdRootUriName.left = new FormAttachment( middle, 0 );
     fdRootUriName.right = new FormAttachment( 100, -margin );
     fdRootUriName.top = new FormAttachment( wUriName, margin );
     wRootUriName.setLayoutData( fdRootUriName );
 
-    FormData fdAdditionalFieldsComp = new FormData();
+    fdAdditionalFieldsComp = new FormData();
     fdAdditionalFieldsComp.left = new FormAttachment( 0, 0 );
     fdAdditionalFieldsComp.top = new FormAttachment( wStepname, margin );
     fdAdditionalFieldsComp.right = new FormAttachment( 100, 0 );

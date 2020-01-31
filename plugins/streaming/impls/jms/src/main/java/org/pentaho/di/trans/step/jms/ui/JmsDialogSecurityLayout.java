@@ -30,6 +30,7 @@ import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.jms.JmsDelegate;
@@ -79,7 +80,7 @@ class JmsDialogSecurityLayout {
 
   JmsDialogSecurityLayout(
     PropsUI props, CTabFolder wTabFolder, ModifyListener lsMod, TransMeta transMeta,
-    boolean sslEnabled, JmsDelegate jmsDelegate ) {
+    boolean sslEnabled, JmsDelegate jmsDelegate, Shell shell ) {
     checkNotNull( props );
     checkNotNull( wTabFolder );
     checkNotNull( lsMod );

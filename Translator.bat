@@ -1,4 +1,4 @@
-@echo off
+@echo on
 
 REM *****************************************************************************
 REM
@@ -22,13 +22,19 @@ REM limitations under the License.
 REM
 REM *****************************************************************************
 
-setlocal 
+REM **************************************************
+REM ** Libraries used by Kettle:                    **
+REM **************************************************
 
-set XMLFILE=%1%
-set SRCDIR=%2%
+set RUNDIR=%CD%\dist
+set XMLFILE=%CD%\%1%
+set SRCDIR=%CD%\%2%
 
+echo RUNDIR=%RUNDIR%
 echo XMLFILE=%XMLFILE%
 echo SRCDIR=%SRCDIR%
+
+cd dist
 
 set IS64BITJAVA=0
 
@@ -58,6 +64,7 @@ REM ===========================================
 REM Using 32bit Java, so include 32bit SWT Jar
 REM ===========================================
 set LIBSPATH=libswt\win32
+
 GOTO :CONTINUE
 :USE64
 REM ===========================================
@@ -65,14 +72,30 @@ REM Using 64bit java, so include 64bit SWT Jar
 REM ===========================================
 set LIBSPATH=libswt\win64
 set SWTJAR=..\libswt\win64
+
 :CONTINUE
+
+
+REM **********************
+REM   Collect arguments
+REM **********************
+
+set _cmdline=
+:TopArg
+if %1!==! goto EndArg
+set _cmdline=%_cmdline% %1
+shift
+goto TopArg
+:EndArg
 
 REM ******************************************************************
 REM ** Set java runtime options                                     **
 REM ** Change 512m to higher values in case you run out of memory   **
+REM ** or set the PENTAHO_DI_JAVA_OPTIONS environment variable      **
 REM ******************************************************************
 
-set OPT="-Xmx512m" "-XX:MaxPermSize=256m"
+set PENTAHO_DI_JAVA_OPTIONS="-Xmx512m" "-XX:MaxPermSize=256m"
+set OPT="-Djava.library.path=%LIBSPATH%" "-DKETTLE_HOME=%KETTLE_HOME%" "-DKETTLE_REPOSITORY=%KETTLE_REPOSITORY%" "-DKETTLE_USER=%KETTLE_USER%" "-DKETTLE_PASSWORD=%KETTLE_PASSWORD%" "-DKETTLE_PLUGIN_PACKAGES=%KETTLE_PLUGIN_PACKAGES%" "-DKETTLE_LOG_SIZE_LIMIT=%KETTLE_LOG_SIZE_LIMIT%" "-DKETTLE_JNDI_ROOT=%KETTLE_JNDI_ROOT%"
 
 REM ***************
 REM ** Run...    **
@@ -82,5 +105,7 @@ REM Eventually call java instead of javaw and do not run in a separate window
 set TRANSLATOR_START_OPTION=start "Translator"
 
 @echo on
-%TRANSLATOR_START_OPTION% java %OPT% -jar launcher\launcher.jar -lib ..\%LIBSPATH% -main org.pentaho.di.ui.i18n.editor.Translator2 %XMLFILE% %SRCDIR%
+%TRANSLATOR_START_OPTION% java %OPT% -jar launcher\launcher-1.0.0.jar -lib ..\%LIBSPATH% -main org.pentaho.di.ui.i18n.editor.Translator2 %XMLFILE% %SRCDIR%
 @echo off
+
+cd %RUNDIR%\..

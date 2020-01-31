@@ -3,7 +3,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -1247,7 +1247,6 @@ public class JobMeta extends AbstractMeta
    */
   public void addJobEntry( int p, JobEntryCopy si ) {
     jobcopies.add( p, si );
-    si.setParentJobMeta( this );
     changedEntries = true;
   }
 
@@ -2551,8 +2550,9 @@ public class JobMeta extends AbstractMeta
         //
         Map<String, String> directoryMap = namingInterface.getDirectoryMap();
         if ( directoryMap != null ) {
-          for ( Map.Entry<String, String> entry : directoryMap.entrySet() ) {
-            jobMeta.addParameterDefinition( entry.getValue(), entry.getKey(), "Data file path discovered during export" );
+          for ( String directory : directoryMap.keySet() ) {
+            String parameterName = directoryMap.get( directory );
+            jobMeta.addParameterDefinition( parameterName, directory, "Data file path discovered during export" );
           }
         }
 

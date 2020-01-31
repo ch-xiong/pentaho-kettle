@@ -1374,7 +1374,7 @@ public class JobEntryJob extends JobEntryBase implements Cloneable, JobEntryInte
     }
   }
 
-  protected JobMeta getJobMetaFromRepository( Repository rep, CurrentDirectoryResolver r, String transPath, VariableSpace tmpSpace ) throws KettleException {
+  private JobMeta getJobMetaFromRepository( Repository rep, CurrentDirectoryResolver r, String transPath ) throws KettleException {
     String realJobName = "";
     String realDirectory = "/";
 
@@ -1389,11 +1389,7 @@ public class JobEntryJob extends JobEntryBase implements Cloneable, JobEntryInte
     if ( repositoryDirectory == null ) {
       throw new KettleException( "Unable to find repository directory [" + Const.NVL( realDirectory, "" ) + "]" );
     }
-    JobMeta jobMeta = rep.loadJob( realJobName, repositoryDirectory, null, null ); //reads
-    if ( jobMeta != null ) {
-      jobMeta.initializeVariablesFrom( tmpSpace );
-    }
-    return jobMeta;
+    return rep.loadJob( realJobName, repositoryDirectory, null, null ); // reads
   }
 
   public JobMeta getJobMeta( Repository rep, IMetaStore metaStore, VariableSpace space ) throws KettleException {
@@ -1410,7 +1406,7 @@ public class JobEntryJob extends JobEntryBase implements Cloneable, JobEntryInte
             jobMeta = new JobMeta( tmpSpace, realFilename, rep, metaStore, null );
           } catch ( KettleException e ) {
             // try to load from repository, this job may have been developed locally and later uploaded to the repository
-            jobMeta = getJobMetaFromRepository( rep, r, realFilename, tmpSpace );
+            jobMeta = getJobMetaFromRepository( rep, r, realFilename );
           }
           break;
         case REPOSITORY_BY_NAME:
@@ -1425,7 +1421,7 @@ public class JobEntryJob extends JobEntryBase implements Cloneable, JobEntryInte
             }
             jobMeta = new JobMeta( tmpSpace, transPath, rep, metaStore, null );
           } else {
-            jobMeta = getJobMetaFromRepository( rep, r, transPath, tmpSpace );
+            jobMeta = getJobMetaFromRepository( rep, r, transPath );
           }
           break;
         case REPOSITORY_BY_REFERENCE:

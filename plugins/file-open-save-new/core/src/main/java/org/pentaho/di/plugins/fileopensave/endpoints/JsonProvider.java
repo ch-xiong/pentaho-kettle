@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import org.pentaho.di.plugins.fileopensave.api.providers.File;
 import org.pentaho.di.plugins.fileopensave.api.providers.exception.InvalidFileProviderException;
-import org.pentaho.di.plugins.fileopensave.providers.ProviderService;
+import org.pentaho.di.plugins.fileopensave.controllers.FileController;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -45,11 +45,11 @@ public class JsonProvider extends JacksonJaxbJsonProvider {
 
   public static final String PROVIDER = "provider";
 
-  public JsonProvider( ProviderService providerService ) {
+  public JsonProvider( FileController fileController ) {
     super();
 
     SimpleModule simpleModule = new SimpleModule();
-    simpleModule.addDeserializer( File.class, new FileDeserializer( providerService ) );
+    simpleModule.addDeserializer( File.class, new FileDeserializer( fileController ) );
 
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule( simpleModule );
@@ -59,11 +59,11 @@ public class JsonProvider extends JacksonJaxbJsonProvider {
 
   public static class FileDeserializer extends StdDeserializer<File> {
 
-    private transient ProviderService providerService;
+    private FileController fileController;
 
-    public FileDeserializer( ProviderService providerService ) {
+    public FileDeserializer( FileController fileController ) {
       this( File.class );
-      this.providerService = providerService;
+      this.fileController = fileController;
     }
 
     public FileDeserializer( Class<?> vc ) {
@@ -77,7 +77,7 @@ public class JsonProvider extends JacksonJaxbJsonProvider {
 
       String type = jsonNode.get( PROVIDER ).asText();
       try {
-        Class<File> clazz = providerService.get( type ).getFileClass();
+        Class<File> clazz = fileController.getFileProvider( type ).getFileClass();
         if ( clazz != null ) {
           ObjectMapper objectMapper = new ObjectMapper();
           objectMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );

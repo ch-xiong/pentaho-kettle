@@ -3,7 +3,7 @@
  *
  *  Pentaho Data Integration
  *
- *  Copyright (C) 2017-2019 by Hitachi Vantara : http://www.pentaho.com
+ *  Copyright (C) 2017-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *  *******************************************************************************
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -21,6 +21,7 @@
  * *****************************************************************************
  *
  */
+
 package org.pentaho.di.engine.configuration.impl.pentaho;
 
 import org.pentaho.di.ExecutionConfiguration;
@@ -62,8 +63,9 @@ public class DefaultRunConfigurationExecutor implements RunConfigurationExecutor
 
     variableSpace.setVariable( "engine", null );
     variableSpace.setVariable( "engine.remote", null );
-    variableSpace.setVariable( "engine.scheme", null );
-    variableSpace.setVariable( "engine.url", null );
+    variableSpace.setVariable( "engine.protocol", null );
+    variableSpace.setVariable( "engine.host", null );
+    variableSpace.setVariable( "engine.port", null );
   }
 
   private void configureTransExecution( TransExecutionConfiguration transExecutionConfiguration,
@@ -103,8 +105,8 @@ public class DefaultRunConfigurationExecutor implements RunConfigurationExecutor
   }
 
   private void setSlaveServer( ExecutionConfiguration executionConfiguration, AbstractMeta meta,
-                               DefaultRunConfiguration defaultRunConfiguration,
-                               VariableSpace variableSpace ) throws KettleException {
+                      DefaultRunConfiguration defaultRunConfiguration,
+                      VariableSpace variableSpace ) throws KettleException {
     SlaveServer slaveServer = meta.findSlaveServer( defaultRunConfiguration.getServer() );
     executionConfiguration.setRemoteServer( slaveServer );
     if ( slaveServer == null ) {

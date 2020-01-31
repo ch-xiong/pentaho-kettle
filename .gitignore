@@ -9,7 +9,6 @@ pom.xml.releaseBackup
 .idea
 bin
 *.class
-*.jar
 *.war
 *.ear
 .DS_Store

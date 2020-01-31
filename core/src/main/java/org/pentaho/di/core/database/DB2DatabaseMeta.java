@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -97,7 +97,7 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -106,9 +106,9 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
    * @return the SQL statement to add a column to the specified table
    */
   @Override
-  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
-    return "ALTER TABLE " + tablename + " ADD COLUMN " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+    return "ALTER TABLE " + tablename + " ADD COLUMN " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   /**
@@ -120,7 +120,7 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -129,7 +129,7 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
    * @return the SQL statement to drop a column from the specified table
    */
   @Override
-  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE " + tablename + " DROP COLUMN " + v.getName() + Const.CR;
   }
@@ -143,7 +143,7 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -152,25 +152,25 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
    * @return the SQL statement to modify a column in the specified table
    */
   @Override
-  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     String retval = "";
     retval += "ALTER TABLE " + tablename + " DROP COLUMN " + v.getName() + Const.CR + ";" + Const.CR;
     retval +=
-      "ALTER TABLE " + tablename + " ADD COLUMN " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+      "ALTER TABLE " + tablename + " ADD COLUMN " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
     return retval;
   }
 
   @Override
-  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean useAutoinc,
-                                    boolean addFieldName, boolean addCr ) {
+  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean use_autoinc,
+    boolean add_fieldname, boolean add_cr ) {
     String retval = "";
 
     String fieldname = v.getName();
     int length = v.getLength();
     int precision = v.getPrecision();
 
-    if ( addFieldName ) {
+    if ( add_fieldname ) {
       retval += fieldname + " ";
     }
 
@@ -185,7 +185,7 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
         break;
       case ValueMetaInterface.TYPE_NUMBER:
       case ValueMetaInterface.TYPE_BIGNUMBER:
-        if ( fieldname.equalsIgnoreCase( tk ) && useAutoinc ) { // Technical key: auto increment field!
+        if ( fieldname.equalsIgnoreCase( tk ) && use_autoinc ) { // Technical key: auto increment field!
           retval += "BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 0, INCREMENT BY 1, NOCACHE)";
         } else {
           if ( length > 0 ) {
@@ -200,7 +200,7 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
         }
         break;
       case ValueMetaInterface.TYPE_INTEGER:
-        if ( fieldname.equalsIgnoreCase( tk ) && useAutoinc ) { // Technical key: auto increment field!
+        if ( fieldname.equalsIgnoreCase( tk ) && use_autoinc ) { // Technical key: auto increment field!
           retval += "INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 0, INCREMENT BY 1, NOCACHE)";
         } else {
           retval += "INTEGER";
@@ -236,7 +236,7 @@ public class DB2DatabaseMeta extends BaseDatabaseMeta implements DatabaseInterfa
         break;
     }
 
-    if ( addCr ) {
+    if ( add_cr ) {
       retval += Const.CR;
     }
 

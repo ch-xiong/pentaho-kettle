@@ -3,7 +3,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2020 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -37,7 +37,6 @@ import org.pentaho.di.version.BuildVersion;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -48,7 +47,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -494,11 +492,8 @@ public class Const {
    * */
   public static final String[] DEPRECATED_VARIABLES = new String[] {
     Const.INTERNAL_VARIABLE_TRANSFORMATION_FILENAME_DIRECTORY,
-    Const.INTERNAL_VARIABLE_TRANSFORMATION_FILENAME_NAME,
-    Const.INTERNAL_VARIABLE_TRANSFORMATION_REPOSITORY_DIRECTORY,
-    Const.INTERNAL_VARIABLE_JOB_FILENAME_DIRECTORY,
-    Const.INTERNAL_VARIABLE_JOB_FILENAME_NAME,
-    Const.INTERNAL_VARIABLE_JOB_REPOSITORY_DIRECTORY
+    Const.INTERNAL_VARIABLE_TRANSFORMATION_FILENAME_NAME, Const.INTERNAL_VARIABLE_TRANSFORMATION_NAME,
+    Const.INTERNAL_VARIABLE_TRANSFORMATION_REPOSITORY_DIRECTORY
   };
 
   /** The transformation filename directory */
@@ -925,7 +920,6 @@ public class Const {
   /**
    * The XML file that contains the list of native Kettle two-way password encoder plugins
    */
-  @SuppressWarnings( "squid:S2068" )
   public static final String XML_FILE_KETTLE_PASSWORD_ENCODER_PLUGINS = "kettle-password-encoder-plugins.xml";
 
   /**
@@ -937,20 +931,17 @@ public class Const {
   /**
    * Specifies the password encoding plugin to use by ID (Kettle is the default).
    */
-  @SuppressWarnings( "squid:S2068" )
   public static final String KETTLE_PASSWORD_ENCODER_PLUGIN = "KETTLE_PASSWORD_ENCODER_PLUGIN";
 
   /**
    * The name of the environment variable that will contain the alternative location of the kettle-password-encoder-plugins.xml
    * file
    */
-  @SuppressWarnings( "squid:S2068" )
   public static final String KETTLE_PASSWORD_ENCODER_PLUGINS_FILE = "KETTLE_PASSWORD_ENCODER_PLUGINS_FILE";
 
   /**
    * The name of the Kettle encryption seed environment variable for the KettleTwoWayPasswordEncoder class
    */
-  @SuppressWarnings( "squid:S2068" )
   public static final String KETTLE_TWO_WAY_PASSWORD_ENCODER_SEED = "KETTLE_TWO_WAY_PASSWORD_ENCODER_SEED";
 
   /**
@@ -1014,7 +1005,6 @@ public class Const {
   /**
    * Set this variable to with the intended password to pass as repository credentials
    */
-  @SuppressWarnings( "squid:S2068" )
   public static final String KETTLE_PASSWORD = "KETTLE_PASSWORD";
 
   /**
@@ -1303,42 +1293,6 @@ public class Const {
    * <p>This environment variable is used by streaming consumer steps to limit the total of concurrent batches across transformations.</p>
    */
   public static final String SHARED_STREAMING_BATCH_POOL_SIZE = "SHARED_STREAMING_BATCH_POOL_SIZE";
-
-  /**
-   * <p>This environment variable is used to specify a location used to deploy a shim driver into PDI.</p>
-   */
-  public static final String SHIM_DRIVER_DEPLOYMENT_LOCATION = "SHIM_DRIVER_DEPLOYMENT_LOCATION";
-  private static final String DEFAULT_DRIVERS_DIR = "DEFAULT";
-  public static String getShimDriverDeploymentLocation() {
-
-    String driversLocation = System.getProperty( Const.SHIM_DRIVER_DEPLOYMENT_LOCATION, DEFAULT_DRIVERS_DIR );
-    if ( driversLocation.equals( DEFAULT_DRIVERS_DIR ) ) {
-      String karafDir = System.getProperty( "karaf.home" );
-      return Paths.get( karafDir ).getParent().getParent().toString() + File.separator + "drivers";
-    }
-    return driversLocation;
-  }
-
-  /**
-   * <p>This environment variable is used by XSD validation steps to enable or disable external entities.</p>
-   * <p>By default external entities are allowed.</p>
-   */
-  public static final String ALLOW_EXTERNAL_ENTITIES_FOR_XSD_VALIDATION = "ALLOW_EXTERNAL_ENTITIES_FOR_XSD_VALIDATION";
-  public static final String ALLOW_EXTERNAL_ENTITIES_FOR_XSD_VALIDATION_DEFAULT = "true";
-
-  /**
-   * <p>This environment variable is used to define the default division result precision between BigDecimals.</p>
-   * <p>By default, and when precision is -1, precision is unlimited.</p>
-   */
-  public static final String KETTLE_BIGDECIMAL_DIVISION_PRECISION = "KETTLE_BIGDECIMAL_DIVISION_PRECISION";
-  public static final String KETTLE_BIGDECIMAL_DIVISION_PRECISION_DEFAULT = "-1";
-
-  /**
-   * <p>This environment variable is used to define the default division result rounding mode between BigDecimals.</p>
-   * <p>By default, rouding mode is half even.</p>
-   */
-  public static final String KETTLE_BIGDECIMAL_DIVISION_ROUNDING_MODE = "KETTLE_BIGDECIMAL_DIVISION_ROUNDING_MODE";
-  public static final String KETTLE_BIGDECIMAL_DIVISION_ROUNDING_MODE_DEFAULT = "HALF_EVEN";
 
   /**
    * rounds double f to any number of places after decimal point Does arithmetic using BigDecimal class to avoid integer
@@ -2094,6 +2048,13 @@ public class Const {
     }
   }
 
+  public static String getUser() {
+    try {
+      return WebSpoonUtils.getUser( WebSpoonUtils.getConnectionId() );
+    } catch ( Exception e ) { // when accessed from background threads (e.g., when the webSpoon server is starting)
+      return null;
+    }
+  }
   /**
    * Looks up the user's home directory (or KETTLE_HOME) for every invocation. This is no longer a static property so
    * the value may be set after this class is loaded.
@@ -2112,6 +2073,31 @@ public class Const {
    */
   public static String getKettleDirectory() {
     return getUserHomeDirectory() + FILE_SEPARATOR + getUserBaseDir();
+  }
+
+  /**
+   * Determines the Kettle absolute directory in the user's home directory.
+   * This is per user-basis.
+   *
+   * @return The Kettle absolute directory.
+   */
+  public static String getKettleUserDirectory() {
+    String path = getKettleDirectory();
+    String user = getUser();
+    if ( user != null ) {
+      path += FILE_SEPARATOR + "users" + FILE_SEPARATOR + user;
+    }
+    return path;
+  }
+
+  /**
+   * Determines the Kettle user data directory in the user's home directory.
+   * This is per user-basis.
+   *
+   * @return The Kettle user data directory.
+   */
+  public static String getKettleUserDataDirectory() {
+    return getKettleUserDirectory() + Const.FILE_SEPARATOR + "data";
   }
 
   /**
@@ -2136,7 +2122,7 @@ public class Const {
    * @return the name of the shared objects file
    */
   public static String getSharedObjectsFile() {
-    return getKettleDirectory() + FILE_SEPARATOR + SHARED_DATA_FILE;
+    return getKettleUserDirectory() + FILE_SEPARATOR + SHARED_DATA_FILE;
   }
 
   /**
@@ -2154,7 +2140,7 @@ public class Const {
    * @return The Kettle repositories file.
    */
   public static String getKettleUserRepositoriesFile() {
-    return getKettleDirectory() + FILE_SEPARATOR + getKettleLocalRepositoriesFile();
+    return getKettleUserDirectory() + FILE_SEPARATOR + getKettleLocalRepositoriesFile();
   }
 
   /**

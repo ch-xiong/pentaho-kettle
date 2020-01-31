@@ -76,8 +76,4 @@ public class FileCache {
     }
     return false;
   }
-
-  public void clearAll() {
-    fileCache.clear();
-  }
 }

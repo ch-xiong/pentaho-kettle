@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -60,11 +60,11 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    * @see DatabaseInterface#getNotFoundTK(boolean)
    */
   @Override
-  public int getNotFoundTK( boolean useAutoinc ) {
-    if ( supportsAutoInc() && useAutoinc ) {
+  public int getNotFoundTK( boolean use_autoinc ) {
+    if ( supportsAutoInc() && use_autoinc ) {
       return 1;
     }
-    return super.getNotFoundTK( useAutoinc );
+    return super.getNotFoundTK( use_autoinc );
   }
 
   @Override
@@ -129,7 +129,7 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -138,13 +138,13 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    * @return the SQL statement to add a column to the specified table
    */
   @Override
-  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     if ( databaseDialect != null ) {
-      return databaseDialect.getAddColumnStatement( tablename, v, tk, useAutoinc, pk, semicolon );
+      return databaseDialect.getAddColumnStatement( tablename, v, tk, use_autoinc, pk, semicolon );
     }
 
-    return "ALTER TABLE " + tablename + " ADD " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+    return "ALTER TABLE " + tablename + " ADD " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   /**
@@ -156,7 +156,7 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -165,20 +165,20 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    * @return the SQL statement to modify a column in the specified table
    */
   @Override
-  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     if ( databaseDialect != null ) {
-      return databaseDialect.getModifyColumnStatement( tablename, v, tk, useAutoinc, pk, semicolon );
+      return databaseDialect.getModifyColumnStatement( tablename, v, tk, use_autoinc, pk, semicolon );
     }
-    return "ALTER TABLE " + tablename + " MODIFY " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+    return "ALTER TABLE " + tablename + " MODIFY " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   @Override
-  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean useAutoinc,
-                                    boolean addFieldName, boolean addCr ) {
+  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean use_autoinc,
+    boolean add_fieldname, boolean add_cr ) {
 
     if ( databaseDialect != null ) {
-      return databaseDialect.getFieldDefinition( v, tk, pk, useAutoinc, addFieldName, addCr );
+      return databaseDialect.getFieldDefinition( v, tk, pk, use_autoinc, add_fieldname, add_cr );
     }
 
     String retval = "";
@@ -187,7 +187,7 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
     int length = v.getLength();
     int precision = v.getPrecision();
 
-    if ( addFieldName ) {
+    if ( add_fieldname ) {
       retval += fieldname + " ";
     }
 
@@ -250,7 +250,7 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
         break;
     }
 
-    if ( addCr ) {
+    if ( add_cr ) {
       retval += Const.CR;
     }
 
@@ -475,11 +475,11 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
   }
 
   @Override
-  public String getSafeFieldname( String fieldName ) {
+  public String getSafeFieldname( String fieldname ) {
     if ( databaseDialect != null ) {
-      return databaseDialect.getSafeFieldname( fieldName );
+      return databaseDialect.getSafeFieldname( fieldname );
     }
-    return super.getSafeFieldname( fieldName );
+    return super.getSafeFieldname( fieldname );
   }
 
   @Override
@@ -837,12 +837,12 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
   }
 
   @Override
-  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
       String pk, boolean semicolon ) {
     if ( databaseDialect != null ) {
-      return databaseDialect.getDropColumnStatement( tablename, v, tk, useAutoinc, pk, semicolon );
+      return databaseDialect.getDropColumnStatement( tablename, v, tk, use_autoinc, pk, semicolon );
     }
-    return super.getDropColumnStatement( tablename, v, tk, useAutoinc, pk, semicolon );
+    return super.getDropColumnStatement( tablename, v, tk, use_autoinc, pk, semicolon );
   }
 
   @Override
@@ -862,11 +862,11 @@ public class GenericDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
   }
 
   @Override
-  public String getSchemaTableCombination( String schemaName, String tablePart ) {
+  public String getSchemaTableCombination( String schema_name, String table_part ) {
     if ( databaseDialect != null ) {
-      return databaseDialect.getSchemaTableCombination( schemaName, tablePart );
+      return databaseDialect.getSchemaTableCombination( schema_name, table_part );
     }
-    return super.getSchemaTableCombination( schemaName, tablePart );
+    return super.getSchemaTableCombination( schema_name, table_part );
   }
 
   @Override

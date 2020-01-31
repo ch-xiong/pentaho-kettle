@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -38,7 +38,7 @@ public interface RowSet {
    *          the row of data
    * @return true if the row was successfully added to the rowset and false if this buffer was full.
    */
-  boolean putRow( RowMetaInterface rowMeta, Object[] rowData );
+  public abstract boolean putRow( RowMetaInterface rowMeta, Object[] rowData );
 
   /**
    * Offer a row of data to this rowset providing for the description (metadata) of the row. If the buffer is full, wait
@@ -54,7 +54,7 @@ public interface RowSet {
    *          The unit of time to use
    * @return true if the row was successfully added to the rowset and false if this buffer was full.
    */
-  boolean putRowWait( RowMetaInterface rowMeta, Object[] rowData, long time, TimeUnit tu );
+  public abstract boolean putRowWait( RowMetaInterface rowMeta, Object[] rowData, long time, TimeUnit tu );
 
   /**
    * Get a row from the input buffer, it blocks for a short period until a new row becomes available. Otherwise, it
@@ -62,96 +62,96 @@ public interface RowSet {
    *
    * @return a row of data or null if no row is available.
    */
-  Object[] getRow();
+  public abstract Object[] getRow();
 
   /**
    * Get the first row in the list immediately.
    *
    * @return a row of data or null if no row is available.
    */
-  Object[] getRowImmediate();
+  public abstract Object[] getRowImmediate();
 
   /**
    * get the first row in the list immediately if it is available or wait until timeout
    *
    * @return a row of data or null if no row is available.
    */
-  Object[] getRowWait( long timeout, TimeUnit tu );
+  public abstract Object[] getRowWait( long timeout, TimeUnit tu );
 
   /**
    * @return Set indication that there is no more input
    */
-  void setDone();
+  public abstract void setDone();
 
   /**
    * @return Returns true if there is no more input and vice versa
    */
-  boolean isDone();
+  public abstract boolean isDone();
 
   /**
    * @return Returns the originStepName.
    */
-  String getOriginStepName();
+  public abstract String getOriginStepName();
 
   /**
    * @return Returns the originStepCopy.
    */
-  int getOriginStepCopy();
+  public abstract int getOriginStepCopy();
 
   /**
    * @return Returns the destinationStepName.
    */
-  String getDestinationStepName();
+  public abstract String getDestinationStepName();
 
   /**
    * @return Returns the destinationStepCopy.
    */
-  int getDestinationStepCopy();
+  public abstract int getDestinationStepCopy();
 
-  String getName();
+  public abstract String getName();
 
   /**
    *
    * @return Return the size (or max capacity) of the RowSet
    */
-  int size();
+  public abstract int size();
 
   /**
    * This method is used only in Trans.java when created RowSet at line 333. Don't need any synchronization on this
    * method
    *
    */
-  void setThreadNameFromToCopy( String from, int fromCopy, String to, int toCopy );
+  public abstract void setThreadNameFromToCopy( String from, int from_copy, String to, int to_copy );
 
   /**
    * @return the rowMeta
    */
-  RowMetaInterface getRowMeta();
+  public abstract RowMetaInterface getRowMeta();
 
   /**
    * @param rowMeta
    *          the rowMeta to set
    */
-  void setRowMeta( RowMetaInterface rowMeta );
+  public abstract void setRowMeta( RowMetaInterface rowMeta );
 
   /**
    * @return the targetSlaveServer
    */
-  String getRemoteSlaveServerName();
+  public abstract String getRemoteSlaveServerName();
 
   /**
    * @param remoteSlaveServerName
    *          the remote slave server to set
    */
-  void setRemoteSlaveServerName( String remoteSlaveServerName );
+  public abstract void setRemoteSlaveServerName( String remoteSlaveServerName );
 
   /**
    * @return true if this row set is blocking.
    */
-  boolean isBlocking();
+  public abstract boolean isBlocking();
 
   /**
    * Clear this rowset: remove all rows and remove the "done" flag.
    */
-  void clear();
+  public abstract void clear();
 }

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -77,7 +77,6 @@ import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.util.DialogHelper;
 import org.pentaho.di.ui.util.DialogUtils;
-import org.pentaho.di.ui.util.ParameterTableHelper;
 import org.pentaho.di.ui.util.SwtSvgImageUtil;
 import org.pentaho.vfs.ui.VfsFileChooserDialog;
 
@@ -89,8 +88,6 @@ public class JobExecutorDialog extends BaseStepDialog implements StepDialogInter
 
   private static int FIELD_DESCRIPTION = 1;
   private static int FIELD_NAME = 2;
-
-  private ParameterTableHelper parameterTableHelper = new ParameterTableHelper();
 
   private JobExecutorMeta jobExecutorMeta;
 
@@ -106,7 +103,6 @@ public class JobExecutorDialog extends BaseStepDialog implements StepDialogInter
   protected boolean jobModified;
 
   private ModifyListener lsMod;
-  private ModifyListener lsModParams;
 
   private Button wInheritAll;
 
@@ -173,14 +169,12 @@ public class JobExecutorDialog extends BaseStepDialog implements StepDialogInter
     props.setLook( shell );
     setShellImage( shell, jobExecutorMeta );
 
-    lsMod = modifyEvent -> doMod();
-
-    // Extended Modify Listener for Params Table to enable/disable fields according to disable listeners
-    lsModParams = modifyEvent -> {
-      parameterTableHelper.checkTableOnMod( modifyEvent );
-      doMod();
+    lsMod = new ModifyListener() {
+      public void modifyText( ModifyEvent e ) {
+        jobExecutorMeta.setChanged();
+        setFlags();
+      }
     };
-
     changed = jobExecutorMeta.hasChanged();
 
     FormLayout formLayout = new FormLayout();
@@ -646,7 +640,7 @@ public class JobExecutorDialog extends BaseStepDialog implements StepDialogInter
     wJobExecutorParameters =
       new TableView(
         transMeta, wParametersComposite, SWT.FULL_SELECTION | SWT.SINGLE | SWT.BORDER, parameterColumns,
-        parameters.getVariable().length, lsModParams, props );
+        parameters.getVariable().length, lsMod, props );
     props.setLook( wJobExecutorParameters );
     FormData fdJobExecutors = new FormData();
     fdJobExecutors.left = new FormAttachment( 0, 0 );
@@ -656,20 +650,11 @@ public class JobExecutorDialog extends BaseStepDialog implements StepDialogInter
     wJobExecutorParameters.setLayoutData( fdJobExecutors );
     wJobExecutorParameters.getTable().addListener( SWT.Resize, new ColumnsResizer( 0, 33, 33, 33 ) );
 
-    parameterTableHelper.setParameterTableView( wJobExecutorParameters );
-    parameterTableHelper.setUpDisabledListeners();
-    // Add disabled listeners to columns
-    parameterColumns[0].setDisabledListener( parameterTableHelper.getVarDisabledListener() );
-    parameterColumns[1].setDisabledListener( parameterTableHelper.getFieldDisabledListener() );
-    parameterColumns[2].setDisabledListener( parameterTableHelper.getInputDisabledListener() );
-
     for ( int i = 0; i < parameters.getVariable().length; i++ ) {
       TableItem tableItem = wJobExecutorParameters.table.getItem( i );
       tableItem.setText( 1, Const.NVL( parameters.getVariable()[ i ], "" ) );
       tableItem.setText( 2, Const.NVL( parameters.getField()[ i ], "" ) );
       tableItem.setText( 3, Const.NVL( parameters.getInput()[ i ], "" ) );
-      // Check disable listeners to shade fields gray
-      parameterTableHelper.checkTableOnOpen( tableItem, i );
     }
     wJobExecutorParameters.setRowNums();
     wJobExecutorParameters.optWidth( true );
@@ -694,11 +679,6 @@ public class JobExecutorDialog extends BaseStepDialog implements StepDialogInter
 
     wParametersComposite.layout();
     wParametersTab.setControl( wParametersComposite );
-  }
-
-  private void doMod() {
-    jobExecutorMeta.setChanged();
-    setFlags();
   }
 
   protected void getParametersFromJob( JobMeta inputJobMeta ) {
@@ -1096,11 +1076,6 @@ public class JobExecutorDialog extends BaseStepDialog implements StepDialogInter
 
   private void ok() {
     if ( Utils.isEmpty( wStepname.getText() ) ) {
-      return;
-    }
-
-    // Check if all parameters have names. If so, continue on.
-    if ( parameterTableHelper.checkParams( shell ) ) {
       return;
     }
 

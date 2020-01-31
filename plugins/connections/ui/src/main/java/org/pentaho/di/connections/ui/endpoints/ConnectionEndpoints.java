@@ -22,13 +22,11 @@
 
 package org.pentaho.di.connections.ui.endpoints;
 
-import org.pentaho.di.base.AbstractMeta;
 import org.pentaho.di.connections.ConnectionDetails;
 import org.pentaho.di.connections.ConnectionManager;
 import org.pentaho.di.connections.ui.dialog.ConnectionDialog;
 import org.pentaho.di.connections.ui.tree.ConnectionFolderProvider;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.osgi.metastore.locator.api.MetastoreLocator;
@@ -98,12 +96,8 @@ public class ConnectionEndpoints {
     boolean saved = connectionManager.save( connectionDetails );
     if ( saved ) {
       connectionManager.delete( name );
-      getSpoon().getShell().getDisplay().asyncExec( () -> getSpoon().refreshTree(
+      spoonSupplier.get().getShell().getDisplay().asyncExec( () -> spoonSupplier.get().refreshTree(
         ConnectionFolderProvider.STRING_VFS_CONNECTIONS ) );
-      EngineMetaInterface engineMetaInterface = getSpoon().getActiveMeta();
-      if ( engineMetaInterface instanceof AbstractMeta ) {
-        ( (AbstractMeta) engineMetaInterface ).setChanged();
-      }
       return Response.ok().build();
     } else {
       return Response.serverError().build();
@@ -130,9 +124,5 @@ public class ConnectionEndpoints {
         BaseMessages.getString( PKG, "ConnectionDialog.help.dialog.Title" ),
         HELP_URL, BaseMessages.getString( PKG, "ConnectionDialog.help.dialog.Header" ) ) );
     return Response.ok().build();
-  }
-
-  private Spoon getSpoon() {
-    return spoonSupplier.get();
   }
 }

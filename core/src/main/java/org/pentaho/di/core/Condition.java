@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,10 +24,9 @@ package org.pentaho.di.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.pentaho.di.core.exception.KettleValueException;
@@ -107,18 +106,18 @@ public class Condition implements Cloneable, XMLInterface {
 
   private boolean negate;
   private int operator;
-  private String leftValuename;
+  private String left_valuename;
   private int function;
-  private String rightValuename;
-  private ValueMetaAndData rightExact;
-  private ObjectId idRightExact;
+  private String right_valuename;
+  private ValueMetaAndData right_exact;
+  private ObjectId id_right_exact;
 
-  private int leftFieldnr;
-  private int rightFieldnr;
+  private int left_fieldnr;
+  private int right_fieldnr;
 
   private List<Condition> list;
 
-  private String rightString;
+  private String right_string;
 
   /**
    * Temporary variable, no need to persist this one. Contains the sorted array of strings in an IN LIST condition
@@ -126,22 +125,22 @@ public class Condition implements Cloneable, XMLInterface {
   private String[] inList;
 
   public Condition() {
-    list = new ArrayList<>();
+    list = new ArrayList<Condition>();
     this.operator = OPERATOR_NONE;
     this.negate = false;
 
-    leftFieldnr = -2;
-    rightFieldnr = -2;
+    left_fieldnr = -2;
+    right_fieldnr = -2;
 
     id = null;
   }
 
   public Condition( String valuename, int function, String valuename2, ValueMetaAndData exact ) {
     this();
-    this.leftValuename = valuename;
+    this.left_valuename = valuename;
     this.function = function;
-    this.rightValuename = valuename2;
-    this.rightExact = exact;
+    this.right_valuename = valuename2;
+    this.right_exact = exact;
 
     clearFieldPositions();
   }
@@ -149,10 +148,10 @@ public class Condition implements Cloneable, XMLInterface {
   public Condition( int operator, String valuename, int function, String valuename2, ValueMetaAndData exact ) {
     this();
     this.operator = operator;
-    this.leftValuename = valuename;
+    this.left_valuename = valuename;
     this.function = function;
-    this.rightValuename = valuename2;
-    this.rightExact = exact;
+    this.right_valuename = valuename2;
+    this.right_exact = exact;
 
     clearFieldPositions();
   }
@@ -198,14 +197,14 @@ public class Condition implements Cloneable, XMLInterface {
       }
     } else {
       retval.negate = negate;
-      retval.leftValuename = leftValuename;
+      retval.left_valuename = left_valuename;
       retval.operator = operator;
-      retval.rightValuename = rightValuename;
+      retval.right_valuename = right_valuename;
       retval.function = function;
-      if ( rightExact != null ) {
-        retval.rightExact = (ValueMetaAndData) rightExact.clone();
+      if ( right_exact != null ) {
+        retval.right_exact = (ValueMetaAndData) right_exact.clone();
       } else {
-        retval.rightExact = null;
+        retval.right_exact = null;
       }
     }
 
@@ -249,12 +248,12 @@ public class Condition implements Cloneable, XMLInterface {
     return new String[] { "OR", "AND", "OR NOT", "AND NOT", "XOR" };
   }
 
-  public void setLeftValuename( String leftValuename ) {
-    this.leftValuename = leftValuename;
+  public void setLeftValuename( String left_valuename ) {
+    this.left_valuename = left_valuename;
   }
 
   public String getLeftValuename() {
-    return leftValuename;
+    return left_valuename;
   }
 
   public int getFunction() {
@@ -278,27 +277,27 @@ public class Condition implements Cloneable, XMLInterface {
     return FUNC_EQUAL;
   }
 
-  public void setRightValuename( String rightValuename ) {
-    this.rightValuename = rightValuename;
+  public void setRightValuename( String right_valuename ) {
+    this.right_valuename = right_valuename;
   }
 
   public String getRightValuename() {
-    return rightValuename;
+    return right_valuename;
   }
 
-  public void setRightExact( ValueMetaAndData rightExact ) {
-    this.rightExact = rightExact;
+  public void setRightExact( ValueMetaAndData right_exact ) {
+    this.right_exact = right_exact;
   }
 
   public ValueMetaAndData getRightExact() {
-    return rightExact;
+    return right_exact;
   }
 
   public String getRightExactString() {
-    if ( rightExact == null ) {
+    if ( right_exact == null ) {
       return null;
     }
-    return rightExact.toString();
+    return right_exact.toString();
   }
 
   /**
@@ -307,26 +306,26 @@ public class Condition implements Cloneable, XMLInterface {
    * @return The id of the RightExact Value in the repository
    */
   public ObjectId getRightExactID() {
-    return idRightExact;
+    return id_right_exact;
   }
 
   /**
    * Set the database ID for the RightExact Value in the repository.
    *
-   * @param idRightExact
+   * @param id_right_exact
    *          The ID to set on this Value.
    *
    */
-  public void setRightExactID( ObjectId idRightExact ) {
-    this.idRightExact = idRightExact;
+  public void setRightExactID( ObjectId id_right_exact ) {
+    this.id_right_exact = id_right_exact;
   }
 
   public boolean isAtomic() {
-    return list.isEmpty();
+    return list.size() == 0;
   }
 
   public boolean isComposite() {
-    return !list.isEmpty();
+    return list.size() != 0;
   }
 
   public boolean isNegated() {
@@ -345,7 +344,7 @@ public class Condition implements Cloneable, XMLInterface {
    * A condition is empty when the condition is atomic and no left field is specified.
    */
   public boolean isEmpty() {
-    return ( isAtomic() && leftValuename == null );
+    return ( isAtomic() && left_valuename == null );
   }
 
   /**
@@ -353,8 +352,8 @@ public class Condition implements Cloneable, XMLInterface {
    * field positions...
    */
   public void clearFieldPositions() {
-    leftFieldnr = -2;
-    rightFieldnr = -2;
+    left_fieldnr = -2;
+    right_fieldnr = -2;
   }
 
   /**
@@ -383,33 +382,59 @@ public class Condition implements Cloneable, XMLInterface {
         // Get fieldnrs left value
         //
         // Check out the fieldnrs if we don't have them...
-        if ( leftValuename != null && leftValuename.length() > 0 ) {
-          leftFieldnr = rowMeta.indexOfValue( leftValuename );
+        if ( left_valuename != null && left_valuename.length() > 0 ) {
+          left_fieldnr = rowMeta.indexOfValue( left_valuename );
         }
 
         // Get fieldnrs right value
         //
-        if ( rightValuename != null && rightValuename.length() > 0 ) {
-          rightFieldnr = rowMeta.indexOfValue( rightValuename );
+        if ( right_valuename != null && right_valuename.length() > 0 ) {
+          right_fieldnr = rowMeta.indexOfValue( right_valuename );
         }
 
         // Get fieldnrs left field
         ValueMetaInterface fieldMeta = null;
         Object field = null;
-        if ( leftFieldnr >= 0 ) {
-          fieldMeta = rowMeta.getValueMeta( leftFieldnr );
-          field = r[ leftFieldnr ];
+        if ( left_fieldnr >= 0 ) {
+          fieldMeta = rowMeta.getValueMeta( left_fieldnr );
+          field = r[left_fieldnr];
+          // JIRA PDI-38
+          // if (field==null)
+          // {
+          // throw new
+          // KettleException("Unable to find field ["+left_valuename+"] in the input row!");
+          // }
         } else {
           return false; // no fields to evaluate
         }
 
         // Get fieldnrs right exact
-        ValueMetaInterface fieldMeta2 = rightExact != null ? rightExact.getValueMeta() : null;
-        Object field2 = rightExact != null ? rightExact.getValueData() : null;
-        if ( field2 == null && rightFieldnr >= 0 ) {
-          fieldMeta2 = rowMeta.getValueMeta( rightFieldnr );
-          field2 = r[ rightFieldnr ];
+        ValueMetaInterface fieldMeta2 = right_exact != null ? right_exact.getValueMeta() : null;
+        Object field2 = right_exact != null ? right_exact.getValueData() : null;
+        if ( field2 == null && right_fieldnr >= 0 ) {
+          fieldMeta2 = rowMeta.getValueMeta( right_fieldnr );
+          field2 = r[right_fieldnr];
+          // JIRA PDI-38
+          // if (field2==null)
+          // {
+          // throw new
+          // KettleException("Unable to find field ["+right_valuename+"] in the input row!");
+          // }
         }
+
+        // if (field==null)
+        // {
+        // throw new
+        // KettleException("Unable to find value for field ["+left_valuename+"] in the input row!");
+        // }
+
+        // This condition goes too as field2 can indeed be null, just not
+        // fieldMeta2
+        // if (field2==null && function!=FUNC_NULL && function!=FUNC_NOT_NULL)
+        // {
+        // throw new
+        // KettleException("Unable to find value for field ["+right_valuename+"] in the input row!");
+        // }
 
         // Evaluate
         switch ( function ) {
@@ -458,7 +483,7 @@ public class Condition implements Cloneable, XMLInterface {
           case FUNC_IN_LIST:
             // performance reason: create the array first or again when it is against a field and not a constant
             //
-            if ( inList == null || rightFieldnr >= 0 ) {
+            if ( inList == null || right_fieldnr >= 0 ) {
               inList = Const.splitString( fieldMeta2.getString( field2 ), ';', true );
               for ( int i = 0; i < inList.length; i++ ) {
                 inList[i] = inList[i] == null ? null : inList[i].replace( "\\", "" );
@@ -470,25 +495,25 @@ public class Condition implements Cloneable, XMLInterface {
             if ( searchString != null ) {
               inIndex = Arrays.binarySearch( inList, searchString );
             }
-            retval = inIndex >= 0;
+            retval = Boolean.valueOf( inIndex >= 0 );
             break;
           case FUNC_CONTAINS:
-            String fm2CompatibleContains = fieldMeta2.getCompatibleString( field2 );
-            retval = Optional.ofNullable( fieldMeta.getCompatibleString( field ) )
-              .filter( s -> s.contains( fm2CompatibleContains ) ).isPresent();
+            retval =
+              fieldMeta.getCompatibleString( field ) != null ? fieldMeta.getCompatibleString( field ).indexOf(
+                fieldMeta2.getCompatibleString( field2 ) ) >= 0 : false;
             break;
           case FUNC_STARTS_WITH:
-            String fm2CompatibleStarts = fieldMeta2.getCompatibleString( field2 );
-            retval = Optional.ofNullable( fieldMeta.getCompatibleString( field ) )
-              .filter( s -> s.startsWith( fm2CompatibleStarts ) ).isPresent();
+            retval =
+              fieldMeta.getCompatibleString( field ) != null ? fieldMeta
+                .getCompatibleString( field ).startsWith( fieldMeta2.getCompatibleString( field2 ) ) : false;
             break;
           case FUNC_ENDS_WITH:
             String string = fieldMeta.getCompatibleString( field );
             if ( !Utils.isEmpty( string ) ) {
-              if ( rightString == null && field2 != null ) {
-                rightString = fieldMeta2.getCompatibleString( field2 );
+              if ( right_string == null && field2 != null ) {
+                right_string = fieldMeta2.getCompatibleString( field2 );
               }
-              if ( rightString != null ) {
+              if ( right_string != null ) {
                 retval = string.endsWith( fieldMeta2.getCompatibleString( field2 ) );
               } else {
                 retval = false;
@@ -580,7 +605,7 @@ public class Condition implements Cloneable, XMLInterface {
       list.add( current );
     } else {
       // Set default operator if not on first position...
-      if ( isComposite() && !list.isEmpty() && cb.getOperator() == OPERATOR_NONE ) {
+      if ( isComposite() && list.size() > 0 && cb.getOperator() == OPERATOR_NONE ) {
         cb.setOperator( OPERATOR_AND );
       }
     }
@@ -686,75 +711,77 @@ public class Condition implements Cloneable, XMLInterface {
     return toString( 0, true, true );
   }
 
-  public String toString( int level, boolean showNegate, boolean showOperator ) {
-    StringBuilder retval = new StringBuilder();
+  public String toString( int level, boolean show_negate, boolean show_operator ) {
+    String retval = "";
 
     if ( isAtomic() ) {
       for ( int i = 0; i < level; i++ ) {
-        retval.append( "  " );
+        retval += "  ";
       }
 
-      if ( showOperator && getOperator() != OPERATOR_NONE ) {
-        retval.append( getOperatorDesc() ).append( " " );
+      if ( show_operator && getOperator() != OPERATOR_NONE ) {
+        retval += getOperatorDesc() + " ";
       } else {
-        retval.append( "        " );
+        retval += "        ";
       }
 
       // Atomic is negated?
-      if ( isNegated() && ( showNegate || level > 0 ) ) {
-        retval.append( "NOT ( " );
+      if ( isNegated() && ( show_negate || level > 0 ) ) {
+        retval += "NOT ( ";
       } else {
-        retval.append( "      " );
+        retval += "      ";
       }
 
       if ( function == FUNC_TRUE ) {
-        retval.append( " TRUE" );
+        retval += " TRUE";
       } else {
-        retval.append( leftValuename ).append( " " ).append( getFunctionDesc() );
+        retval += left_valuename + " " + getFunctionDesc();
         if ( function != FUNC_NULL && function != FUNC_NOT_NULL ) {
-          if ( rightValuename != null ) {
-            retval.append( " " ).append( rightValuename );
+          if ( right_valuename != null ) {
+            retval += " " + right_valuename;
           } else {
-            retval.append( " [" ).append( getRightExactString() == null ? "" : getRightExactString() ).append( "]" );
+            retval += " [" + ( getRightExactString() == null ? "" : getRightExactString() ) + "]";
           }
         }
       }
 
-      if ( isNegated() && ( showNegate || level > 0 ) ) {
-        retval.append( " )" );
+      if ( isNegated() && ( show_negate || level > 0 ) ) {
+        retval += " )";
       }
 
-      retval.append( Const.CR );
+      retval += Const.CR;
     } else {
+      // retval+="<COMP "+level+", "+show_negate+", "+show_operator+">";
+
       // Group is negated?
-      if ( isNegated() && ( showNegate || level > 0 ) ) {
+      if ( isNegated() && ( show_negate || level > 0 ) ) {
         for ( int i = 0; i < level; i++ ) {
-          retval.append( "  " );
+          retval += "  ";
         }
-        retval.append( "NOT" ).append( Const.CR );
+        retval += "NOT" + Const.CR;
       }
       // Group is preceded by an operator:
-      if ( getOperator() != OPERATOR_NONE && ( showOperator || level > 0 ) ) {
+      if ( getOperator() != OPERATOR_NONE && ( show_operator || level > 0 ) ) {
         for ( int i = 0; i < level; i++ ) {
-          retval.append( "  " );
+          retval += "  ";
         }
-        retval.append( getOperatorDesc() ).append( Const.CR );
+        retval += getOperatorDesc() + Const.CR;
       }
       for ( int i = 0; i < level; i++ ) {
-        retval.append( "  " );
+        retval += "  ";
       }
-      retval.append( "(" ).append( Const.CR );
+      retval += "(" + Const.CR;
       for ( int i = 0; i < list.size(); i++ ) {
         Condition cb = list.get( i );
-        retval.append( cb.toString( level + 1, true, i > 0 ) );
+        retval += cb.toString( level + 1, true, i > 0 );
       }
       for ( int i = 0; i < level; i++ ) {
-        retval.append( "  " );
+        retval += "  ";
       }
-      retval.append( ")" ).append( Const.CR );
+      retval += ")" + Const.CR;
     }
 
-    return retval.toString();
+    return retval;
   }
 
   @Override
@@ -763,38 +790,38 @@ public class Condition implements Cloneable, XMLInterface {
   }
 
   public String getXML( int level ) throws KettleValueException {
-    StringBuilder retval = new StringBuilder();
+    String retval = "";
     String indent1 = Const.rightPad( " ", level );
     String indent2 = Const.rightPad( " ", level + 1 );
     String indent3 = Const.rightPad( " ", level + 2 );
 
-    retval.append( indent1 ).append( XMLHandler.openTag( XML_TAG ) ).append( Const.CR );
+    retval += indent1 + XMLHandler.openTag( XML_TAG ) + Const.CR;
 
-    retval.append( indent2 ).append( XMLHandler.addTagValue( "negated", isNegated() ) );
+    retval += indent2 + XMLHandler.addTagValue( "negated", isNegated() );
 
     if ( getOperator() != OPERATOR_NONE ) {
-      retval.append( indent2 ).append( XMLHandler.addTagValue( "operator", Const.rtrim( getOperatorDesc() ) ) );
+      retval += indent2 + XMLHandler.addTagValue( "operator", Const.rtrim( getOperatorDesc() ) );
     }
 
     if ( isAtomic() ) {
-      retval.append( indent2 ).append( XMLHandler.addTagValue( "leftvalue", getLeftValuename() ) );
-      retval.append( indent2 ).append( XMLHandler.addTagValue( "function", getFunctionDesc() ) );
-      retval.append( indent2 ).append( XMLHandler.addTagValue( "rightvalue", getRightValuename() ) );
+      retval += indent2 + XMLHandler.addTagValue( "leftvalue", getLeftValuename() );
+      retval += indent2 + XMLHandler.addTagValue( "function", getFunctionDesc() );
+      retval += indent2 + XMLHandler.addTagValue( "rightvalue", getRightValuename() );
       if ( getRightExact() != null ) {
-        retval.append( indent2 ).append( getRightExact().getXML() );
+        retval += indent2 + getRightExact().getXML();
       }
     } else {
-      retval.append( indent2 ).append( "<conditions>" ).append( Const.CR );
+      retval += indent2 + "<conditions>" + Const.CR;
       for ( int i = 0; i < nrConditions(); i++ ) {
         Condition c = getCondition( i );
-        retval.append( c.getXML( level + 2 ) );
+        retval += c.getXML( level + 2 );
       }
-      retval.append( indent3 ).append( "</conditions>" ).append( Const.CR );
+      retval += indent3 + "</conditions>" + Const.CR;
     }
 
-    retval.append( indent2 ).append( XMLHandler.closeTag( XML_TAG ) ).append( Const.CR );
+    retval += indent2 + XMLHandler.closeTag( XML_TAG ) + Const.CR;
 
-    return retval.toString();
+    return retval;
   }
 
   public Condition( String xml ) throws KettleXMLException {
@@ -810,16 +837,16 @@ public class Condition implements Cloneable, XMLInterface {
   public Condition( Node condnode ) throws KettleXMLException {
     this();
 
-    list = new ArrayList<>();
+    list = new ArrayList<Condition>();
     try {
-      String strNegated = XMLHandler.getTagValue( condnode, "negated" );
-      setNegated( "Y".equalsIgnoreCase( strNegated ) );
+      String str_negated = XMLHandler.getTagValue( condnode, "negated" );
+      setNegated( "Y".equalsIgnoreCase( str_negated ) );
 
-      String strOperator = XMLHandler.getTagValue( condnode, "operator" );
-      setOperator( getOperator( strOperator ) );
+      String str_operator = XMLHandler.getTagValue( condnode, "operator" );
+      setOperator( getOperator( str_operator ) );
 
       Node conditions = XMLHandler.getSubNode( condnode, "conditions" );
-      int nrconditions = XMLHandler.countNodes( conditions, XML_TAG );
+      int nrconditions = XMLHandler.countNodes( conditions, "condition" );
       if ( nrconditions == 0 ) {
         // ATOMIC!
         setLeftValuename( XMLHandler.getTagValue( condnode, "leftvalue" ) );
@@ -832,7 +859,7 @@ public class Condition implements Cloneable, XMLInterface {
         }
       } else {
         for ( int i = 0; i < nrconditions; i++ ) {
-          Node subcondnode = XMLHandler.getSubNodeByNr( conditions, XML_TAG, i );
+          Node subcondnode = XMLHandler.getSubNodeByNr( conditions, "condition", i );
           Condition c = new Condition( subcondnode );
           addCondition( c );
         }
@@ -843,12 +870,21 @@ public class Condition implements Cloneable, XMLInterface {
   }
 
   public String[] getUsedFields() {
-    Map<String, String> fields = new HashMap<>();
+    Hashtable<String, String> fields = new Hashtable<String, String>();
     getUsedFields( fields );
-    return fields.keySet().toArray( new String[0] );
+
+    String[] retval = new String[fields.size()];
+    Enumeration<String> keys = fields.keys();
+    int i = 0;
+    while ( keys.hasMoreElements() ) {
+      retval[i] = keys.nextElement();
+      i++;
+    }
+
+    return retval;
   }
 
-  public void getUsedFields( Map<String, String> fields ) {
+  public void getUsedFields( Hashtable<String, String> fields ) {
     if ( isAtomic() ) {
       if ( getLeftValuename() != null ) {
         fields.put( getLeftValuename(), "-" );

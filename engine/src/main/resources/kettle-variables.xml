@@ -61,12 +61,12 @@
   </kettle-variable>
 
   <kettle-variable>
-    <description>The transformation performance log database connection default for all transformations</description>
+    <description>The transformation performance log schema default for all transformations</description>
     <variable>KETTLE_TRANS_PERFORMANCE_LOG_DB</variable>
   </kettle-variable>
 
   <kettle-variable>
-    <description>The transformation performance log schema default for all transformations</description>
+    <description>The transformation performance log database connection default for all transformations</description>
     <variable>KETTLE_TRANS_PERFORMANCE_LOG_SCHEMA</variable>
   </kettle-variable>
 
@@ -510,12 +510,6 @@
     <description>This environment variable is used by streaming consumer steps to limit the total of concurrent batches across transformations. Leave 0 for unlimited.</description>
     <variable>SHARED_STREAMING_BATCH_POOL_SIZE</variable>
     <default-value>0</default-value>
-  </kettle-variable>
-
-  <kettle-variable>
-    <description>This environment variable is used to specify a location used to deploy a shim driver into PDI.</description>
-    <variable>SHIM_DRIVER_DEPLOYMENT_LOCATION</variable>
-    <default-value>DEFAULT</default-value>
   </kettle-variable>
 </kettle-variables>
 

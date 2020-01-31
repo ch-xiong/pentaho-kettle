@@ -152,7 +152,7 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -161,10 +161,10 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    * @return the SQL statement to add a column to the specified table
    */
   @Override
-  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE "
-      + tablename + " ADD ( " + getFieldDefinition( v, tk, pk, useAutoinc, true, false ) + " ) ";
+      + tablename + " ADD ( " + getFieldDefinition( v, tk, pk, use_autoinc, true, false ) + " ) ";
   }
 
   /**
@@ -176,7 +176,7 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -185,7 +185,7 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    * @return the SQL statement to drop a column from the specified table
    */
   @Override
-  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE " + tablename + " DROP COLUMN " + v.getName() + Const.CR;
   }
@@ -199,7 +199,7 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -208,24 +208,24 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    * @return the SQL statement to modify a column in the specified table
    */
   @Override
-  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
 
     return "ALTER TABLE "
-      + tablename + " MODIFY COLUMN " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+      + tablename + " MODIFY COLUMN " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
 
   }
 
   @Override
-  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean useAutoinc,
-                                    boolean addFieldName, boolean addCr ) {
+  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean use_autoinc,
+    boolean add_fieldname, boolean add_cr ) {
     StringBuilder retval = new StringBuilder( 128 );
 
     String fieldname = v.getName();
     int length = v.getLength();
     int precision = v.getPrecision();
 
-    if ( addFieldName ) {
+    if ( add_fieldname ) {
       retval.append( fieldname ).append( ' ' );
     }
 
@@ -278,7 +278,7 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
         break;
     }
 
-    if ( addCr ) {
+    if ( add_cr ) {
       retval.append( Const.CR );
     }
 
@@ -369,7 +369,7 @@ public class Exasol4DatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
    * @throws KettleDatabaseException
    */
   @Override
-  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idxFields ) throws KettleDatabaseException {
+  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idx_fields ) throws KettleDatabaseException {
 
     // no explicit index handling, indexes are not exposed in exasol. Assume
     // all indexes are there!

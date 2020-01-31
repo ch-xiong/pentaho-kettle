@@ -6,23 +6,25 @@
   <parent>
     <groupId>org.pentaho.di.plugins</groupId>
     <artifactId>file-open-save</artifactId>
-    <version>9.0.0.0-SNAPSHOT</version>
+    <version>8.3.0.0-371</version>
   </parent>
 
   <artifactId>file-open-save-core</artifactId>
-  <version>9.0.0.0-SNAPSHOT</version>
+  <version>8.3.0.0-371</version>
   <packaging>bundle</packaging>
 
   <name>PDI File Open and Save Plugin Core</name>
 
   <properties>
     <maven-replacer-plugin.version>1.5.2</maven-replacer-plugin.version>
+    <webspoon.version>8.3.0.0-371-19</webspoon.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
+      <version>${webspoon.version}</version>
     </dependency>
     <dependency>
       <groupId>pentaho-kettle</groupId>
@@ -43,10 +45,6 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-i18n-webservice-bundle</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.pentaho.di.plugins</groupId>
-      <artifactId>core-ui</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.swt</groupId>
@@ -90,11 +88,6 @@
       <groupId>org.webjars.bower</groupId>
       <artifactId>dojo</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.webjars.npm</groupId>
-      <artifactId>jquery</artifactId>
-      <scope>runtime</scope>
-    </dependency>    
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>

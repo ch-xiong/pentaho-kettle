@@ -23,16 +23,6 @@
 
 package org.pentaho.di.core.database;
 
-import org.pentaho.di.core.Const;
-import org.pentaho.di.core.RowMetaAndData;
-import org.pentaho.di.core.encryption.Encr;
-import org.pentaho.di.core.exception.KettleDatabaseException;
-import org.pentaho.di.core.exception.KettleValueException;
-import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.util.Utils;
-import org.pentaho.di.core.variables.VariableSpace;
-import org.pentaho.di.repository.ObjectId;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,11 +30,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import org.pentaho.di.core.Const;
+import org.pentaho.di.core.util.Utils;
+import org.pentaho.di.core.RowMetaAndData;
+import org.pentaho.di.core.encryption.Encr;
+import org.pentaho.di.core.exception.KettleDatabaseException;
+import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.variables.VariableSpace;
+import org.pentaho.di.repository.ObjectId;
 
 /**
  * This class contains the basic information on a database connection. It is not intended to be used other than the
@@ -117,7 +117,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
   /**
    * The clustering database password prefix
    */
-  @SuppressWarnings( "squid:S2068" ) public static final String ATTRIBUTE_CLUSTER_PASSWORD_PREFIX = "CLUSTER_PASSWORD_";
+  public static final String ATTRIBUTE_CLUSTER_PASSWORD_PREFIX = "CLUSTER_PASSWORD_";
 
   /** The pooling parameters */
   public static final String ATTRIBUTE_POOLING_PARAMETER_PREFIX = "POOLING_";
@@ -172,7 +172,6 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
 
   public static final String SEQUENCE_FOR_BATCH_ID = "SEQUENCE_FOR_BATCH_ID";
   public static final String AUTOINCREMENT_SQL_FOR_BATCH_ID = "AUTOINCREMENT_SQL_FOR_BATCH_ID";
-  public static final String NAMED_CLUSTER_ID = "NAMED_CLUSTER_ID";
 
   /**
    * Boolean to indicate if savepoints can be released Most databases do, so we set it to true. Child classes can
@@ -650,7 +649,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
   }
 
   @Override
-  public int getNotFoundTK( boolean useAutoinc ) {
+  public int getNotFoundTK( boolean use_autoinc ) {
     return 0;
   }
 
@@ -780,15 +779,15 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
    * Get the schema-table combination to query the right table. Usually that is SCHEMA.TABLENAME, however there are
    * exceptions to this rule...
    *
-   * @param schemaName
+   * @param schema_name
    *          The schema name
-   * @param tablePart
+   * @param table_part
    *          The tablename
    * @return the schema-table combination to query the right table.
    */
   @Override
-  public String getSchemaTableCombination( String schemaName, String tablePart ) {
-    return schemaName + "." + tablePart;
+  public String getSchemaTableCombination( String schema_name, String table_part ) {
+    return schema_name + "." + table_part;
   }
 
   /**
@@ -900,7 +899,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -909,7 +908,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
    * @return the SQL statement to drop a column from the specified table
    */
   @Override
-  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE " + tablename + " DROP " + v.getName() + Const.CR;
   }
@@ -1157,7 +1156,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
    */
   @Override
   public Map<String, String> getExtraOptions() {
-    Map<String, String> map = new HashMap<>();
+    Map<String, String> map = new Hashtable<String, String>();
 
     for ( Enumeration<Object> keys = attributes.keys(); keys.hasMoreElements(); ) {
       String attribute = (String) keys.nextElement();
@@ -1441,7 +1440,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
     for ( Iterator<Object> iter = attributes.keySet().iterator(); iter.hasNext(); ) {
       String key = (String) iter.next();
       if ( key.startsWith( ATTRIBUTE_POOLING_PARAMETER_PREFIX ) ) {
-        iter.remove();
+        attributes.remove( key );
       }
     }
 
@@ -1602,16 +1601,16 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
    *          a connected database
    * @param schemaName
    * @param tableName
-   * @param idxFields
+   * @param idx_fields
    * @return true if the index exists, false if it doesn't.
    * @throws KettleDatabaseException
    */
   @Override
-  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idxFields ) throws KettleDatabaseException {
+  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idx_fields ) throws KettleDatabaseException {
 
     String tablename = database.getDatabaseMeta().getQuotedSchemaTableCombination( schemaName, tableName );
 
-    boolean[] exists = new boolean[idxFields.length];
+    boolean[] exists = new boolean[idx_fields.length];
     for ( int i = 0; i < exists.length; i++ ) {
       exists[i] = false;
     }
@@ -1622,9 +1621,13 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
       try {
         indexList = database.getDatabaseMetaData().getIndexInfo( null, null, tablename, false, true );
         while ( indexList.next() ) {
+          // String tablen = indexList.getString("TABLE_NAME");
+          // String indexn = indexList.getString("INDEX_NAME");
           String column = indexList.getString( "COLUMN_NAME" );
+          // int pos = indexList.getShort("ORDINAL_POSITION");
+          // int type = indexList.getShort("TYPE");
 
-          int idx = Const.indexOfString( column, idxFields );
+          int idx = Const.indexOfString( column, idx_fields );
           if ( idx >= 0 ) {
             exists[idx] = true;
           }
@@ -1821,7 +1824,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
   public List<String> parseStatements( String sqlScript ) {
 
     List<SqlScriptStatement> scriptStatements = getSqlScriptStatements( sqlScript );
-    List<String> statements = new ArrayList<>();
+    List<String> statements = new ArrayList<String>();
     for ( SqlScriptStatement scriptStatement : scriptStatements ) {
       statements.add( scriptStatement.getStatement() );
     }
@@ -1837,7 +1840,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
    */
   @Override
   public List<SqlScriptStatement> getSqlScriptStatements( String sqlScript ) {
-    List<SqlScriptStatement> statements = new ArrayList<>();
+    List<SqlScriptStatement> statements = new ArrayList<SqlScriptStatement>();
     String all = sqlScript;
     int from = 0;
     int to = 0;
@@ -1848,7 +1851,7 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
 
       // Skip comment lines...
       //
-      while ( all.startsWith( "--", from ) ) {
+      while ( all.substring( from ).startsWith( "--" ) ) {
         int nextLineIndex = all.indexOf( Const.CR, from );
         from = nextLineIndex + Const.CR.length();
         if ( to >= length ) {
@@ -2212,19 +2215,19 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
    * <li>Prefixes a string with underscore that begins with a number</li>
    * </ul>
    *
-   * @param fieldName
+   * @param fieldname
    *          value to sanitize
    * @return
    */
   @Override
-  public String getSafeFieldname( String fieldName ) {
-    StringBuilder newName = new StringBuilder( fieldName.length() );
+  public String getSafeFieldname( String fieldname ) {
+    StringBuilder newName = new StringBuilder( fieldname.length() );
 
     char[] protectors = getFieldnameProtector().toCharArray();
 
     // alpha numerics , underscores, field protectors only
-    for ( int idx = 0; idx < fieldName.length(); idx++ ) {
-      char c = fieldName.charAt( idx );
+    for ( int idx = 0; idx < fieldname.length(); idx++ ) {
+      char c = fieldname.charAt( idx );
       if ( ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ) || ( c == '_' ) ) {
         newName.append( c );
       } else if ( c == ' ' ) {
@@ -2237,23 +2240,26 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
           }
         }
       }
+      // else {
+      // swallow this character
+      // }
     }
-    fieldName = newName.toString();
+    fieldname = newName.toString();
 
     // don't allow reserved words
     for ( String reservedWord : getReservedWords() ) {
-      if ( fieldName.equalsIgnoreCase( reservedWord ) ) {
-        fieldName = fieldName + getFieldnameProtector();
+      if ( fieldname.equalsIgnoreCase( reservedWord ) ) {
+        fieldname = fieldname + getFieldnameProtector();
       }
     }
 
-    fieldName = fieldName.replace( " ", getFieldnameProtector() );
+    fieldname = fieldname.replace( " ", getFieldnameProtector() );
 
     // can't start with a number
-    if ( fieldName.matches( "^[0-9].*" ) ) {
-      fieldName = getFieldnameProtector() + fieldName;
+    if ( fieldname.matches( "^[0-9].*" ) ) {
+      fieldname = getFieldnameProtector() + fieldname;
     }
-    return fieldName;
+    return fieldname;
   }
 
   /**
@@ -2327,15 +2333,5 @@ public abstract class BaseDatabaseMeta implements Cloneable, DatabaseInterfaceEx
   @Override
   public String getAttribute( String attributeId, String defaultValue ) {
     return attributes.getProperty( attributeId, defaultValue  );
-  }
-
-  @Override
-  public void setNamedCluster( String namedCluster ) {
-    addAttribute( NAMED_CLUSTER_ID, namedCluster );
-  }
-
-  @Override
-  public String getNamedCluster() {
-    return getAttribute( NAMED_CLUSTER_ID, "" );
   }
 }

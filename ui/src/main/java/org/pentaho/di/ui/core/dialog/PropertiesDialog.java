@@ -40,7 +40,6 @@ import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import org.pentaho.di.ui.util.HelpUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,33 +47,26 @@ import java.util.Map;
 public class PropertiesDialog extends Dialog {
   private static final Class<?> PKG = PropertiesDialog.class;
 
+  private Shell parent;
   private Shell shell;
   private TableView propertiesTable;
+  private Button wCancel;
+  private Button wOK;
 
   private TransMeta transMeta;
   private Map<String, String> properties;
-  private String helpUrl;
-  private String helpTitle;
-  private String helpHeader;
+  private String title;
 
   public PropertiesDialog( Shell shell, TransMeta transMeta, Map<String, String> properties, String title ) {
-    this( shell, transMeta, properties, title, null, null, null );
-  }
-
-  public PropertiesDialog( Shell shell, TransMeta transMeta, Map<String, String> properties, String title,
-                           String helpUrl, String helpTitle, String helpHeader ) {
     super( shell, SWT.NONE );
-    this.setText( title );
+    this.title = title;
+    this.parent = shell;
     this.transMeta = transMeta;
     this.properties = properties;
-    this.helpUrl = helpUrl;
-    this.helpTitle = helpTitle;
-    this.helpHeader = helpHeader;
   }
 
   public Map<String, String> open() {
     PropsUI props = PropsUI.getInstance();
-    Shell parent = getParent();
     Display display = parent.getDisplay();
 
     shell = new Shell( parent, SWT.DIALOG_TRIM | SWT.RESIZE );
@@ -86,13 +78,9 @@ public class PropertiesDialog extends Dialog {
     formLayout.marginHeight = Const.FORM_MARGIN;
 
     shell.setLayout( formLayout );
-    shell.setText( getText() );
+    shell.setText( title );
 
-    if ( StringUtils.isNotEmpty( helpUrl ) ) {
-      HelpUtils.createHelpButton( shell, helpTitle, helpUrl, helpHeader );
-    }
-
-    Button wCancel = new Button( shell, SWT.PUSH );
+    wCancel = new Button( shell, SWT.PUSH );
     wCancel.setText( BaseMessages.getString( PKG, "System.Button.Cancel" ) );
     FormData fdCancel = new FormData();
     fdCancel.right = new FormAttachment( 100, 0 );
@@ -100,7 +88,7 @@ public class PropertiesDialog extends Dialog {
     wCancel.setLayoutData( fdCancel );
     wCancel.addListener( SWT.Selection, e -> close() );
 
-    Button wOK = new Button( shell, SWT.PUSH );
+    wOK = new Button( shell, SWT.PUSH );
     wOK.setText( BaseMessages.getString( PKG, "System.Button.OK" ) );
     FormData fdOk = new FormData();
     fdOk.right = new FormAttachment( wCancel, -5 );
@@ -108,7 +96,9 @@ public class PropertiesDialog extends Dialog {
     wOK.setLayoutData( fdOk );
     wOK.addListener( SWT.Selection, e -> ok() );
 
-    ColumnInfo[] columns = createColumns();
+    ColumnInfo[] columns = new ColumnInfo[]{
+      new ColumnInfo( "name", ColumnInfo.COLUMN_TYPE_TEXT ),
+      new ColumnInfo( "value", ColumnInfo.COLUMN_TYPE_TEXT ) };
 
     propertiesTable = new TableView(
       transMeta,
@@ -136,7 +126,6 @@ public class PropertiesDialog extends Dialog {
     fdData.top = new FormAttachment( 0, 0 );
     fdData.right = new FormAttachment( 100, 0 );
     fdData.bottom = new FormAttachment( wOK, 0 );
-    fdData.width = 450;
 
     propertiesTable.setLayoutData( fdData );
 
@@ -150,12 +139,6 @@ public class PropertiesDialog extends Dialog {
     }
 
     return properties;
-  }
-
-  protected ColumnInfo[] createColumns() {
-    return new ColumnInfo[]{
-      new ColumnInfo( BaseMessages.getString( "propertiesDialog.name" ), ColumnInfo.COLUMN_TYPE_TEXT ),
-      new ColumnInfo( BaseMessages.getString( "propertiesDialog.value" ), ColumnInfo.COLUMN_TYPE_TEXT ) };
   }
 
   private void populateData() {

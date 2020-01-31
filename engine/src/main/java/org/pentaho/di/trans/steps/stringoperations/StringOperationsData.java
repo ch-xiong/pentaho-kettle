@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -39,24 +39,24 @@ public class StringOperationsData extends BaseStepData implements StepDataInterf
   public String[] outStreamNrs;
 
   /** Runtime trim operators */
-  public String[] trimOperators;
+  public int[] trimOperators;
 
   /** Runtime trim operators */
-  public String[] lowerUpperOperators;
+  public int[] lowerUpperOperators;
 
-  public String[] padType;
+  public int[] padType;
 
   public String[] padChar;
 
   public int[] padLen;
 
-  public String[] initCap;
+  public int[] initCap;
 
-  public String[] maskHTML;
+  public int[] maskHTML;
 
-  public String[] digits;
+  public int[] digits;
 
-  public String[] removeSpecialCharacters;
+  public int[] removeSpecialCharacters;
 
   public RowMetaInterface outputRowMeta;
 

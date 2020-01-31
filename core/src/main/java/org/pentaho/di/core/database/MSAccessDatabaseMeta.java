@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -50,11 +50,11 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    * @see DatabaseInterface#getNotFoundTK(boolean)
    */
   @Override
-  public int getNotFoundTK( boolean useAutoinc ) {
-    if ( supportsAutoInc() && useAutoinc ) {
+  public int getNotFoundTK( boolean use_autoinc ) {
+    if ( supportsAutoInc() && use_autoinc ) {
       return 1;
     }
-    return super.getNotFoundTK( useAutoinc );
+    return super.getNotFoundTK( use_autoinc );
   }
 
   @Override
@@ -82,8 +82,8 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    */
   @Override
   @SuppressWarnings( "deprecation" )
-  public String getSchemaTableCombination( String schemaName, String tablePart ) {
-    return getBackwardsCompatibleSchemaTableCombination( schemaName, tablePart );
+  public String getSchemaTableCombination( String schema_name, String table_part ) {
+    return getBackwardsCompatibleSchemaTableCombination( schema_name, table_part );
   }
 
   /**
@@ -156,7 +156,7 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -165,9 +165,9 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    * @return the SQL statement to add a column to the specified table
    */
   @Override
-  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
-    return "ALTER TABLE " + tablename + " ADD COLUMN " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+    return "ALTER TABLE " + tablename + " ADD COLUMN " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   /**
@@ -179,7 +179,7 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -188,7 +188,7 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    * @return the SQL statement to drop a column from the specified table
    */
   @Override
-  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE " + tablename + " DROP COLUMN " + v.getName() + Const.CR;
   }
@@ -202,7 +202,7 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -211,22 +211,22 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    * @return the SQL statement to modify a column in the specified table
    */
   @Override
-  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE "
-      + tablename + " ALTER COLUMN " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+      + tablename + " ALTER COLUMN " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   @Override
-  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean useAutoinc,
-                                    boolean addFieldName, boolean addCr ) {
+  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean use_autoinc,
+    boolean add_fieldname, boolean add_cr ) {
     String retval = "";
 
     String fieldname = v.getName();
     int length = v.getLength();
     int precision = v.getPrecision();
 
-    if ( addFieldName ) {
+    if ( add_fieldname ) {
       retval += fieldname + " ";
     }
 
@@ -250,7 +250,7 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
         if ( fieldname.equalsIgnoreCase( tk ) || // Technical key
           fieldname.equalsIgnoreCase( pk ) // Primary key
         ) {
-          if ( useAutoinc ) {
+          if ( use_autoinc ) {
             retval += "COUNTER PRIMARY KEY";
           } else {
             retval += "LONG PRIMARY KEY";
@@ -290,7 +290,7 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
         break;
     }
 
-    if ( addCr ) {
+    if ( add_cr ) {
       retval += Const.CR;
     }
 
@@ -374,11 +374,11 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
    * @throws KettleDatabaseException
    */
   @Override
-  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idxFields ) throws KettleDatabaseException {
+  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idx_fields ) throws KettleDatabaseException {
 
     String tablename = database.getDatabaseMeta().getQuotedSchemaTableCombination( schemaName, tableName );
 
-    boolean[] exists = new boolean[ idxFields.length];
+    boolean[] exists = new boolean[idx_fields.length];
     for ( int i = 0; i < exists.length; i++ ) {
       exists[i] = false;
     }
@@ -396,7 +396,7 @@ public class MSAccessDatabaseMeta extends BaseDatabaseMeta implements DatabaseIn
           // int pos = indexList.getShort("ORDINAL_POSITION");
           // int type = indexList.getShort("TYPE");
 
-          int idx = Const.indexOfString( column, idxFields );
+          int idx = Const.indexOfString( column, idx_fields );
           if ( idx >= 0 ) {
             exists[idx] = true;
           }

@@ -38,7 +38,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,7 +45,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Created by bmorrise on 2/16/19.
@@ -79,20 +77,16 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
    */
   @Override public Tree getTree() {
     LocalTree localTree = new LocalTree( NAME );
-    List<LocalFile> rootFiles = new ArrayList<>();
-    FileSystems.getDefault().getRootDirectories().forEach( path -> {
-      LocalDirectory localDirectory = new LocalDirectory();
-      localDirectory.setPath( path.toString() );
-      localDirectory.setName( path.toString() );
-      localDirectory.setRoot( NAME );
-      rootFiles.add( localDirectory );
-    } );
-    localTree.setFiles( rootFiles );
-
+    String home = System.getProperty( "user.home" );
+    String user = System.getProperty( "user.dir" );
+    LocalFile localFile = new LocalFile();
+    localFile.setPath( "/" );
+    localTree.setFiles( getFiles( localFile, null ) );
     return localTree;
   }
 
   // TODO: Filter out certain files from root
+
   /**
    * @param file
    * @param filters
@@ -100,11 +94,11 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
    */
   public List<LocalFile> getFiles( LocalFile file, String filters ) {
     List<LocalFile> files = new ArrayList<>();
-    try ( Stream<Path> paths = Files.list( Paths.get( file.getPath() ) ) ) {
-      paths.forEach( path -> {
+    try {
+      Files.list( Paths.get( file.getPath() ) ).forEach( path -> {
         String name = path.getFileName().toString();
         try {
-          if ( path.toFile().isDirectory() && !Files.isHidden( path ) ) {
+          if ( Files.isDirectory( path ) && !Files.isHidden( path ) ) {
             files.add( LocalDirectory.create( file.getPath(), path ) );
           } else if ( !Files.isHidden( path ) && Utils.matches( name, filters ) ) {
             files.add( LocalFile.create( file.getPath(), path ) );
@@ -151,7 +145,7 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
   @Override
   public LocalFile add( LocalFile folder ) throws FileException {
     Path folderPath = Paths.get( folder.getPath() );
-    if ( folderPath.toFile().exists() ) {
+    if ( Files.exists( folderPath ) ) {
       throw new FileExistsException();
     }
     try {
@@ -202,7 +196,7 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
    * @return
    * @throws FileException
    */
-  private LocalFile doMove( String path, String newPath, boolean overwrite ) throws FileException {
+  private LocalFile doMove( String path, String newPath, Boolean overwrite ) throws FileException {
     try {
       Path movePath;
       if ( overwrite ) {
@@ -210,7 +204,7 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
       } else {
         movePath = Files.move( Paths.get( path ), Paths.get( newPath ) );
       }
-      if ( Paths.get( path ).toFile().isDirectory() ) {
+      if ( Files.isDirectory( Paths.get( path ) ) ) {
         return LocalDirectory.create( movePath.getParent().toString(), movePath );
       } else {
         return LocalFile.create( movePath.getParent().toString(), movePath );
@@ -231,7 +225,7 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
   public LocalFile copy( LocalFile file, String toPath, boolean overwrite ) throws FileException {
     try {
       Path newPath = Files.copy( Paths.get( file.getPath() ), Paths.get( toPath ), StandardCopyOption.REPLACE_EXISTING );
-      if ( newPath.toFile().isDirectory() ) {
+      if ( Files.isDirectory( newPath ) ) {
         return LocalDirectory.create( newPath.getParent().toString(), newPath );
       } else {
         return LocalFile.create( newPath.getParent().toString(), newPath );
@@ -247,7 +241,7 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
    * @return
    */
   @Override public boolean fileExists( LocalFile dir, String path ) {
-    return Paths.get( path ).toFile().exists();
+    return Files.exists( Paths.get( path ) );
   }
 
   /**
@@ -307,7 +301,7 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
     String name = Utils.getName( newPath ).replace( "." + extension, "" );
     int i = 1;
     String testName = newPath;
-    while ( Paths.get( testName ).toFile().exists() ) {
+    while ( Files.exists( Paths.get( testName ) ) ) {
       if ( Utils.isValidExtension( extension ) ) {
         testName = parent + name + " " + i + "." + extension;
       } else {
@@ -319,14 +313,6 @@ public class LocalFileProvider extends BaseFileProvider<LocalFile> {
   }
 
   @Override public LocalFile getParent( LocalFile file ) {
-    return null;
-  }
-
-  public void clearProviderCache() {
-    //Any local caches that this provider might use should be cleared here.
-  }
-
-  @Override public LocalFile getFile( LocalFile file ) {
     return null;
   }
 }

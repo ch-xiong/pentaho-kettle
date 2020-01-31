@@ -53,7 +53,7 @@ define([
     controller: filesController
   };
 
-  filesController.$inject = [clipboardService.name, "$timeout", "$filter", "$document", "$scope", "$state"];
+  filesController.$inject = [clipboardService.name, "$timeout", "$filter", "$document", "$scope"];
 
   /**
    * The Files Controller.
@@ -63,14 +63,13 @@ define([
    * @param {Function} $timeout - Angular wrapper for window.setTimeout.
    * @param $filter
    */
-  function filesController(clipboardService, $timeout, $filter, $document, $scope, $state) {
+  function filesController(clipboardService, $timeout, $filter, $document, $scope) {
     var vm = this;
     vm.$onInit = onInit;
     vm.$onChanges = onChanges;
     vm._name = "name";
     vm._type = "type";
     vm._date = "date";
-    vm.fileFilter = fileFilter;
     vm.selectFile = selectFile;
     vm.commitFile = commitFile;
     vm.rename = rename;
@@ -84,19 +83,16 @@ define([
     vm.onClick = onClick;
     vm.onRightClick = onRightClick;
     vm.isSelected = isSelected;
-    vm.isHighlighted = isHighlighted;
     vm.onCopyStart = onCopyStart;
     vm.onCut = onCut;
     vm.onPaste = onPaste;
     vm.canPaste = canPaste;
     vm.onPasteFolder = onPasteFolder;
     vm.onAddFolderClick = onAddFolderClick;
-    vm.onBodyClick = onBodyClick;
     vm.errorType = 0;
     vm.onKeyDown = onKeyDown;
     vm.onKeyUp = onKeyUp;
-    vm.state = $state;
-    vm.highlighted = [];
+    vm.getFiles = getFiles;
     var targetFiles = [];
 
     /**
@@ -119,47 +115,30 @@ define([
      * that have changed, and the values are an object of the form
      */
     function onChanges(changes) {
-      $timeout(function () {
-        vm.selectedFile = null;
-      });
-    }
-
-    function onBodyClick(e, id) {
-      var parentNode = e.target.parentNode;
-      var found = false;
-      while (parentNode) {
-        if (parentNode.id === id) {
-          found = true;
-          break;
-        }
-        parentNode = parentNode.parentNode;
-      }
-      if (!found) {
-        vm.highlighted = [];
+      if (changes.folder) {
+        $timeout(function () {
+          vm.selectedFile = null;
+          _setSort(0, false, "name");
+        }, 200);
       }
     }
 
     function onKeyDown(event) {
-      if (event.target.tagName !== "INPUT") {
-        var ctrlKey = event.metaKey || event.ctrlKey;
-        if (event.keyCode === 27) {
-          vm.highlighted = [];
-        }
-        if (event.keyCode === 67 && ctrlKey) {
-          targetFiles = vm.selectedFiles;
-          clipboardService.set(targetFiles, "copy");
-        }
-        if (event.keyCode === 88 && ctrlKey) {
-          targetFiles = vm.selectedFiles;
-          clipboardService.set(targetFiles, "cut");
-        }
-        if (event.keyCode === 86 && ctrlKey) {
-          vm.onPasteFolder();
-        }
-        if (event.keyCode === 65 && ctrlKey) {
-          if (event.target.tagName !== "INPUT") {
-            selectAll();
-          }
+      var ctrlKey = event.metaKey || event.ctrlKey;
+      if (event.keyCode === 67 && ctrlKey) {
+        targetFiles = vm.selectedFiles;
+        clipboardService.set(targetFiles, "copy");
+      }
+      if (event.keyCode === 88 && ctrlKey) {
+        targetFiles = vm.selectedFiles;
+        clipboardService.set(targetFiles, "cut");
+      }
+      if (event.keyCode === 86 && ctrlKey) {
+        vm.onPasteFolder();
+      }
+      if (event.keyCode === 65 && ctrlKey) {
+        if (event.target.tagName !== "INPUT") {
+          selectAll();
         }
       }
     }
@@ -175,15 +154,15 @@ define([
     }
 
     var types = [];
-    types['kjb'] = "Job.S_D";
-    types['ktr'] = "Transformation.S_D";
-    types['jpg'] = "Picture.S_D";
-    types['png'] = "Picture.S_D";
-    types['gif'] = "Picture.S_D";
-    types['txt'] = "Report.S_D";
-    types['csv'] = "Report.S_D";
-    types['json'] = "Report.S_D";
-    types['xml'] = "Report.S_D";
+    types['kjb'] = "job";
+    types['ktr'] = "trans";
+    types['jpg'] = "image";
+    types['png'] = "image";
+    types['gif'] = "image";
+    types['txt'] = "text";
+    types['csv'] = "text";
+    types['json'] = "text";
+    types['xml'] = "text";
 
     /**
      * Gets the file extension
@@ -192,21 +171,18 @@ define([
      */
     function getExtension(file) {
       if (file.type === "folder") {
-        return vm.isSelected(file) && !vm.isHighlighted(file) ? "Archive.S_D_white" : "Archive.S_D";
+        return "folder";
       }
       var index = file.path.lastIndexOf(".");
       var extension = file.path.substr(index + 1, file.path.length);
       var type = types[extension.toLowerCase()];
-      var icon = type ? type : "Doc.S_D";
-      icon += vm.isSelected(file) && !vm.isHighlighted(file) ? "_white" : "";
-      return icon;
+      return type ? type : "blank";
     }
 
     /**
      * Calls two-way binding to parent component (app) to open file if not editing.
      *
-     * @param {Object} e - Click event
-     * @param {Object} file - file object
+     * @param {Object} file - file object.
      */
     function commitFile(e, file) {
       e.preventDefault();
@@ -224,7 +200,6 @@ define([
      * @param {Boolean} ctrl - whether or not ctrl/command key is pressed
      */
     function selectFile(file, shift, ctrl) {
-      vm.highlighted = [];
       if (ctrl) {
         var index = vm.selectedFiles.indexOf(file);
         if (index === -1) {
@@ -271,6 +246,7 @@ define([
         }
       }
     }
+
 
     /**
      * Create a new folder
@@ -436,9 +412,6 @@ define([
      */
     function onRenameClick() {
       targetFiles[0].editing = true;
-      $timeout(function() {
-        selectFile(targetFiles[0]);
-      });
     }
 
     /**
@@ -464,19 +437,15 @@ define([
      * @param {File} file - File object that was clicked
      */
     function onRightClick(e, file) {
-      if (!vm.isSelected(file)) {
-        vm.selectedFiles = [];
-      }
       if (file === null) {
         targetFiles = [vm.folder];
       } else {
-        if (vm.selectedFiles.length === 0 || (vm.selectedFiles.length > 0 && !vm.isSelected(file))) {
+        if ( vm.selectedFiles.length === 0 || ( vm.selectedFiles.length > 0 && vm.selectedFiles.indexOf(file) === -1 ) ) {
           targetFiles = [file];
         } else {
           targetFiles = vm.selectedFiles;
         }
       }
-      vm.highlighted = targetFiles;
     }
 
     /**
@@ -486,10 +455,6 @@ define([
      */
     function isSelected(file) {
       return vm.selectedFiles.indexOf(file) !== -1;
-    }
-
-    function isHighlighted(file) {
-      return vm.highlighted.indexOf(file) !== -1;
     }
 
     /**
@@ -540,18 +505,25 @@ define([
       vm.onAddFolder();
     }
 
-    function fileFilter(file) {
+    function getFiles() {
+      var files = [];
+      if (vm.files) {
+        for (var i = 0; i < vm.files.length; i++) {
+          if (vm.files[i].type === "folder") {
+            files.push(vm.files[i]);
+          } else {
+            if (vm.filter === "all") {
+              files.push(vm.files[i]);
+            } else {
+              if (vm.files[i].path.match(vm.filter) != null) {
+                files.push(vm.files[i]);
+              }
+            }
+          }
 
-      if (vm.state.is('selectFolder')) {
-        return file.type === "folder"
+        }
       }
-
-      if (!vm.filter) {
-        return true;
-      }
-      return file.type === "folder"
-          || vm.filter === "*"
-          || file.path.toLowerCase().match(vm.filter.toLowerCase());
+      return files;
     }
 
     /**

@@ -23,10 +23,8 @@
 package org.pentaho.di.connections.ui.dialog;
 
 import org.eclipse.swt.SWT;
-import org.pentaho.di.base.AbstractMeta;
 import org.pentaho.di.connections.ConnectionManager;
 import org.pentaho.di.connections.ui.tree.ConnectionFolderProvider;
-import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.ui.spoon.Spoon;
 
@@ -60,10 +58,6 @@ public class ConnectionDelegate {
       connectionManager.delete( label );
       spoonSupplier.get().getShell().getDisplay().asyncExec( () -> spoonSupplier.get().refreshTree(
         ConnectionFolderProvider.STRING_VFS_CONNECTIONS ) );
-      EngineMetaInterface engineMetaInterface = spoonSupplier.get().getActiveMeta();
-      if ( engineMetaInterface instanceof AbstractMeta ) {
-        ( (AbstractMeta) engineMetaInterface ).setChanged();
-      }
     }
   }
 

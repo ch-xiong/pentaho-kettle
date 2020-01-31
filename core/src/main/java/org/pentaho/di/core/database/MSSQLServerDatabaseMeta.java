@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -82,13 +82,13 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
   }
 
   @Override
-  public String getSchemaTableCombination( String schemaName, String tablePart ) {
+  public String getSchemaTableCombination( String schema_name, String table_part ) {
     // Something special for MSSQL
     //
     if ( isUsingDoubleDecimalAsSchemaTableSeparator() ) {
-      return schemaName + ".." + tablePart;
+      return schema_name + ".." + table_part;
     } else {
-      return schemaName + "." + tablePart;
+      return schema_name + "." + table_part;
     }
   }
 
@@ -152,7 +152,7 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -161,9 +161,9 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
    * @return the SQL statement to add a column to the specified table
    */
   @Override
-  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
-    return "ALTER TABLE " + tablename + " ADD " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+    return "ALTER TABLE " + tablename + " ADD " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   /**
@@ -175,7 +175,7 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -184,10 +184,10 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
    * @return the SQL statement to modify a column in the specified table
    */
   @Override
-  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE "
-      + tablename + " ALTER COLUMN " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+      + tablename + " ALTER COLUMN " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   /**
@@ -199,7 +199,7 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
    *          The column defined as a value
    * @param tk
    *          the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *          whether or not this field uses auto increment
    * @param pk
    *          the name of the primary key field
@@ -208,21 +208,21 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
    * @return the SQL statement to drop a column from the specified table
    */
   @Override
-  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  public String getDropColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
     return "ALTER TABLE " + tablename + " DROP COLUMN " + v.getName() + Const.CR;
   }
 
   @Override
-  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean useAutoinc,
-                                    boolean addFieldName, boolean addCr ) {
+  public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean use_autoinc,
+    boolean add_fieldname, boolean add_cr ) {
     String retval = "";
 
     String fieldname = v.getName();
     int length = v.getLength();
     int precision = v.getPrecision();
 
-    if ( addFieldName ) {
+    if ( add_fieldname ) {
       retval += fieldname + " ";
     }
 
@@ -245,7 +245,7 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
         if ( fieldname.equalsIgnoreCase( tk ) || // Technical key
           fieldname.equalsIgnoreCase( pk ) // Primary key
         ) {
-          if ( useAutoinc ) {
+          if ( use_autoinc ) {
             retval += "BIGINT PRIMARY KEY IDENTITY(0,1)";
           } else {
             retval += "BIGINT PRIMARY KEY";
@@ -290,7 +290,7 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
         break;
     }
 
-    if ( addCr ) {
+    if ( add_cr ) {
       retval += Const.CR;
     }
 
@@ -385,11 +385,11 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
    * @throws KettleDatabaseException
    */
   @Override
-  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idxFields ) throws KettleDatabaseException {
+  public boolean checkIndexExists( Database database, String schemaName, String tableName, String[] idx_fields ) throws KettleDatabaseException {
 
     String tablename = database.getDatabaseMeta().getQuotedSchemaTableCombination( schemaName, tableName );
 
-    boolean[] exists = new boolean[ idxFields.length];
+    boolean[] exists = new boolean[idx_fields.length];
     for ( int i = 0; i < exists.length; i++ ) {
       exists[i] = false;
     }
@@ -413,7 +413,7 @@ public class MSSQLServerDatabaseMeta extends BaseDatabaseMeta implements Databas
           Object[] row = database.getRow( res );
           while ( row != null ) {
             String column = database.getReturnRowMeta().getString( row, "column_name", "" );
-            int idx = Const.indexOfString( column, idxFields );
+            int idx = Const.indexOfString( column, idx_fields );
             if ( idx >= 0 ) {
               exists[idx] = true;
             }

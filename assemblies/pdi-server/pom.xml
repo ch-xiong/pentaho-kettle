@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>pdi-assemblies</artifactId>
+        <groupId>org.pentaho.di</groupId>
+        <version>8.3.0.0-371</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>pdi-server</artifactId>
+    <properties>
+        <replacer.version>1.5.2</replacer.version>
+        <pentaho-karaf.version>8.3.0.0-371</pentaho-karaf.version>
+        <pentaho-plugins.version>8.3.0.0-371</pentaho-plugins.version>
+        <tomcat.version>8.5.34</tomcat.version>
+        <tomcat.directory>${project.build.directory}/apache-tomcat-${tomcat.version}</tomcat.directory>
+        <resources.directory>${basedir}/src/main/resources</resources.directory>
+        <resources-filtered.directory>${basedir}/src/main/resources-filtered</resources-filtered.directory>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.pentaho.di</groupId>
+            <artifactId>pdi-ce</artifactId>
+            <version>8.3.0.0-371-19</version>
+            <type>war</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pentaho-karaf-assembly</artifactId>
+            <version>${pentaho-karaf.version}</version>
+            <classifier>client</classifier>
+            <type>zip</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.pentaho.di</groupId>
+            <artifactId>pdi-plugins</artifactId>
+            <version>${pentaho-plugins.version}</version>
+            <type>zip</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-assembly</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.tomcat</groupId>
+                                    <artifactId>tomcat-windows-x64</artifactId>
+                                    <version>${tomcat.version}</version>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <excludes>**/webapps/docs/**,
+                                        **/webapps/examples/**,
+                                        **/webapps/host-manager/**,
+                                        **/webapps/manager/**,
+                                        **/webapps/ROOT/**</excludes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-karaf</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>pentaho</groupId>
+                                    <artifactId>pentaho-karaf-assembly</artifactId>
+                                    <classifier>client</classifier>
+                                    <type>zip</type>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${assembly.dir}/system</outputDirectory>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>add-spoon</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.pentaho.di</groupId>
+                                    <artifactId>pdi-ce</artifactId>
+                                    <type>war</type>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${tomcat.directory}/webapps/spoon</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-plugins</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.pentaho.di</groupId>
+                                    <artifactId>pdi-plugins</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${assembly.dir}/plugins</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>${replacer.version}</version>
+                <executions>
+                    <execution>
+                        <id>replace-tomcat-tokens-server-xml</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <file>${tomcat.directory}/conf/catalina.properties</file>
+                            <token># Licensed to the Apache Software Foundation</token>
+                            <value></value>
+                            <replacements>
+                                <replacement>
+                                    <!-- 先将org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH参数备份 -->
+                                    <token>org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=</token>
+                                    <value>org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH_bak=</value>
+                                </replacement>
+                                <replacement>
+                                    <!-- 将org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH 添加到第一行-->
+                                    <token># Licensed to the Apache Software Foundation</token>
+                                    <value>org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
+# Licensed to the Apache Software Foundation</value>
+                                </replacement>
+                            </replacements>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>rename-unpacked-dependencies</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <echo message="Moving unpacked dependencies to the right place..."/>
+                                <move file="${assembly.dir}/system/pentaho-karaf-assembly"
+                                      tofile="${tomcat.directory}/system/karaf" failonerror="false"/>
+
+                                <move file="${assembly.dir}/plugins"
+                                      tofile="${tomcat.directory}" failonerror="false"/>
+
+                                <move file="${assembly.dir}/lib/pdi-dataservice-server-plugin-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/system/karaf/system/pentaho/pdi-dataservice-server-plugin/8.3.0.0-371/pdi-dataservice-server-plugin-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/lib/pdi-platform-utils-plugin-core-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/plugins/platform-utils-plugin/pdi-platform-utils-plugin-core-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/lib/pentaho-big-data-kettle-plugins-common-ui-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/system/karaf/system/pentaho/pentaho-big-data-kettle-plugins-common-ui/8.3.0.0-371/pentaho-big-data-kettle-plugins-common-ui-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/lib/pentaho-big-data-legacy-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/plugins/pentaho-big-data-plugin/pentaho-big-data-legacy-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/lib/pentaho-i18n-webservice-bundle-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/system/karaf/system/pentaho/pentaho-i18n-webservice-bundle/8.3.0.0-371/pentaho-i18n-webservice-bundle-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/lib/pentaho-kettle-repository-locator-impl-spoon-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/system/karaf/system/pentaho/pentaho-kettle-repository-locator-impl-spoon/8.3.0.0-371/pentaho-kettle-repository-locator-impl-spoon-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/lib/pentaho-marketplace-di-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/system/karaf/system/org/pentaho/pentaho-marketplace-di/8.3.0.0-371/pentaho-marketplace-di-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/lib/pentaho-pdi-platform-8.3.0.0-371.jar"
+                                      tofile="${tomcat.directory}/system/karaf/system/pentaho/pentaho-pdi-platform/8.3.0.0-371/pentaho-pdi-platform-8.3.0.0-371.jar"/>
+                                <move file="${assembly.dir}/resources/custom.properties"
+                                      tofile="${tomcat.directory}/system/karaf/etc/custom.properties"/>
+                                <move file="${assembly.dir}/resources/slave-server-config.xml"
+                                      tofile="${tomcat.directory}/system/kettle/slave-server-config.xml"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/**</include>
+                </includes>
+                <targetPath>${assembly.dir}/resources</targetPath>
+            </resource>
+            <resource>
+                <directory>lib</directory>
+                <includes>
+                    <include>**/**</include>
+                </includes>
+                <targetPath>${assembly.dir}/lib</targetPath>
+            </resource>
+        </resources>
+    </build>
+
+</project>

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -40,7 +40,7 @@ public class MetaStoreConst {
   public static final String DB_ATTR_ID_PORT = "port";
   public static final String DB_ATTR_ID_DATABASE_NAME = "database_name";
   public static final String DB_ATTR_ID_USERNAME = "username";
-  @SuppressWarnings( "squid:S2068" ) public static final String DB_ATTR_ID_PASSWORD = "password";
+  public static final String DB_ATTR_ID_PASSWORD = "password";
   public static final String DB_ATTR_ID_SERVERNAME = "server_name";
   public static final String DB_ATTR_ID_DATA_TABLESPACE = "data_tablespace";
   public static final String DB_ATTR_ID_INDEX_TABLESPACE = "index_tablespace";
@@ -69,13 +69,20 @@ public class MetaStoreConst {
     if ( Utils.isEmpty( rootFolder ) ) {
       rootFolder = getDefaultPentahoMetaStoreLocation();
     }
+    if ( Const.getUser() != null ) { // when no user authentication is used
+      rootFolder += File.separator + "users" + File.separator + Const.getUser();
+    }
     File rootFolderFile = new File( rootFolder );
     File metaFolder = new File( rootFolder + File.separator + XmlUtil.META_FOLDER_NAME );
     if ( !allowCreate && !metaFolder.exists() ) {
       return null;
     }
     if ( !rootFolderFile.exists() ) {
-      rootFolderFile.mkdirs();
+      try {
+        rootFolderFile.mkdirs();
+      } catch ( SecurityException e ) {
+        throw new MetaStoreException( e.getMessage() );
+      }
     }
 
     XmlMetaStore metaStore = new XmlMetaStore( rootFolder );

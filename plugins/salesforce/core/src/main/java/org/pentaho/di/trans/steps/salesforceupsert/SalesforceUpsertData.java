@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,9 +28,6 @@ import org.pentaho.di.trans.steps.salesforce.SalesforceStepData;
 import com.sforce.soap.partner.UpsertResult;
 import com.sforce.soap.partner.sobject.SObject;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /*
  * @author Samatar
  * @since 10-06-2007
@@ -49,8 +46,6 @@ public class SalesforceUpsertData extends SalesforceStepData {
   public int iBufferPos;
 
   public String realSalesforceFieldName;
-  public Map<String, String> dataTypeMap;
-  public boolean mapData;
 
   public SalesforceUpsertData() {
     super();
@@ -60,6 +55,5 @@ public class SalesforceUpsertData extends SalesforceStepData {
     upsertResult = null;
     realSalesforceFieldName = null;
     iBufferPos = 0;
-    dataTypeMap = new HashMap<>();
   }
 }

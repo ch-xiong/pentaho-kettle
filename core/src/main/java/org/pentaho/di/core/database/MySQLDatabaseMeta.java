@@ -92,11 +92,11 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
   /**
    * @see org.pentaho.di.core.database.DatabaseInterface#getNotFoundTK(boolean)
    */
-  @Override public int getNotFoundTK( boolean useAutoinc ) {
-    if ( supportsAutoInc() && useAutoinc ) {
+  @Override public int getNotFoundTK( boolean use_autoinc ) {
+    if ( supportsAutoInc() && use_autoinc ) {
       return 1;
     }
-    return super.getNotFoundTK( useAutoinc );
+    return super.getNotFoundTK( use_autoinc );
   }
 
   @Override public String getDriverClass() {
@@ -170,7 +170,7 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
    *   The column defined as a value
    * @param tk
    *   the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *   whether or not this field uses auto increment
    * @param pk
    *   the name of the primary key field
@@ -178,9 +178,9 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
    *   whether or not to add a semi-colon behind the statement.
    * @return the SQL statement to add a column to the specified table
    */
-  @Override public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean useAutoinc,
+  @Override public String getAddColumnStatement( String tablename, ValueMetaInterface v, String tk, boolean use_autoinc,
     String pk, boolean semicolon ) {
-    return "ALTER TABLE " + tablename + " ADD " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+    return "ALTER TABLE " + tablename + " ADD " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
   /**
@@ -192,7 +192,7 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
    *   The column defined as a value
    * @param tk
    *   the name of the technical key field
-   * @param useAutoinc
+   * @param use_autoinc
    *   whether or not this field uses auto increment
    * @param pk
    *   the name of the primary key field
@@ -201,12 +201,12 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
    * @return the SQL statement to modify a column in the specified table
    */
   @Override public String getModifyColumnStatement( String tablename, ValueMetaInterface v, String tk,
-                                                    boolean useAutoinc, String pk, boolean semicolon ) {
-    return "ALTER TABLE " + tablename + " MODIFY " + getFieldDefinition( v, tk, pk, useAutoinc, true, false );
+    boolean use_autoinc, String pk, boolean semicolon ) {
+    return "ALTER TABLE " + tablename + " MODIFY " + getFieldDefinition( v, tk, pk, use_autoinc, true, false );
   }
 
-  @Override public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean useAutoinc,
-                                              boolean addFieldName, boolean addCr ) {
+  @Override public String getFieldDefinition( ValueMetaInterface v, String tk, String pk, boolean use_autoinc,
+    boolean add_fieldname, boolean add_cr ) {
     String retval = "";
 
     String fieldname = v.getName();
@@ -216,7 +216,7 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
     int length = v.getLength();
     int precision = v.getPrecision();
 
-    if ( addFieldName ) {
+    if ( add_fieldname ) {
       retval += fieldname + " ";
     }
 
@@ -240,7 +240,7 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
         if ( fieldname.equalsIgnoreCase( tk ) || // Technical key
           fieldname.equalsIgnoreCase( pk ) // Primary key
         ) {
-          if ( useAutoinc ) {
+          if ( use_autoinc ) {
             retval += "BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY";
           } else {
             retval += "BIGINT NOT NULL PRIMARY KEY";
@@ -300,7 +300,7 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
         break;
     }
 
-    if ( addCr ) {
+    if ( add_cr ) {
       retval += Const.CR;
     }
 

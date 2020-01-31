@@ -26,15 +26,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.parameters.UnknownParamException;
 import org.pentaho.di.core.util.Utils;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
@@ -50,8 +47,6 @@ import org.pentaho.di.job.JobAdapter;
 import org.pentaho.di.job.JobConfiguration;
 import org.pentaho.di.job.JobExecutionConfiguration;
 import org.pentaho.di.job.JobMeta;
-import org.pentaho.di.repository.KettleAuthenticationException;
-import org.pentaho.di.repository.KettleRepositoryNotFoundException;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.RepositoriesMeta;
 import org.pentaho.di.repository.Repository;
@@ -199,36 +194,7 @@ public class ExecuteJobServlet extends BaseHttpServlet implements CartePluginInt
     String jobOption = request.getParameter( "job" );
     String levelOption = request.getParameter( "level" );
 
-    PrintWriter out = response.getWriter();
-
-    Repository repository;
-    try {
-      repository = openRepository( repOption, userOption, passOption );
-    } catch ( KettleRepositoryNotFoundException krnfe ) {
-      // Repository not found.
-      response.setStatus( HttpServletResponse.SC_NOT_FOUND );
-      String message = BaseMessages.getString( PKG, "ExecuteJobServlet.Error.UnableToFindRepository", repOption );
-      out.println( new WebResult( WebResult.STRING_ERROR, message ) );
-      return;
-    } catch ( KettleException ke ) {
-      // Authentication Error.
-      if (  ke.getCause() instanceof ExecutionException ) {
-        ExecutionException ee = (ExecutionException) ke.getCause();
-        if (  ee.getCause() instanceof KettleAuthenticationException ) {
-          response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
-          String message = BaseMessages.getString( PKG, "ExecuteJobServlet.Error.Authentication", getContextPath() );
-          out.println( new WebResult( WebResult.STRING_ERROR, message ) );
-          return;
-        }
-      }
-
-      // Something unexpected occurred.
-      response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR );
-      String message = BaseMessages.getString(
-        PKG, "ExecuteJobServlet.Error.UnexpectedError", Const.CR + Const.getStackTracker( ke ) );
-      out.println( new WebResult( WebResult.STRING_ERROR, message ) );
-      return;
-    }
+    response.setStatus( HttpServletResponse.SC_OK );
 
     String encoding = System.getProperty( "KETTLE_DEFAULT_SERVLET_ENCODING", null );
     if ( encoding != null && !Utils.isEmpty( encoding.trim() ) ) {
@@ -236,97 +202,81 @@ public class ExecuteJobServlet extends BaseHttpServlet implements CartePluginInt
       response.setContentType( "text/html; charset=" + encoding );
     }
 
-    JobMeta jobMeta;
+    PrintWriter out = response.getWriter();
+
     try {
-      jobMeta = loadJob( repository, jobOption );
-    } catch ( KettleException ke ) {
-      // Job not found in repository.
-      response.setStatus( HttpServletResponse.SC_NOT_FOUND );
-      out.println( new WebResult( WebResult.STRING_ERROR, ke.getMessage() ) );
-      return;
-    }
 
-    // Set the servlet parameters as variables in the job
-    //
-    String[] parameters = jobMeta.listParameters();
-    Enumeration<?> parameterNames = request.getParameterNames();
-    while ( parameterNames.hasMoreElements() ) {
-      String parameter = (String) parameterNames.nextElement();
-      String[] values = request.getParameterValues( parameter );
+      final Repository repository = openRepository( repOption, userOption, passOption );
+      final JobMeta jobMeta = loadJob( repository, jobOption );
 
-      // Ignore the known options. set the rest as variables
+      // Set the servlet parameters as variables in the job
       //
-      if ( Const.indexOfString( parameter, knownOptions ) < 0 ) {
-        // If it's a job parameter, set it, otherwise simply set the variable
+      String[] parameters = jobMeta.listParameters();
+      Enumeration<?> parameterNames = request.getParameterNames();
+      while ( parameterNames.hasMoreElements() ) {
+        String parameter = (String) parameterNames.nextElement();
+        String[] values = request.getParameterValues( parameter );
+
+        // Ignore the known options. set the rest as variables
         //
-        if ( Const.indexOfString( parameter, parameters ) < 0 ) {
-          jobMeta.setVariable( parameter, values[0] );
-        } else {
-          try {
+        if ( Const.indexOfString( parameter, knownOptions ) < 0 ) {
+          // If it's a job parameter, set it, otherwise simply set the variable
+          //
+          if ( Const.indexOfString( parameter, parameters ) < 0 ) {
+            jobMeta.setVariable( parameter, values[0] );
+          } else {
             jobMeta.setParameterValue( parameter, values[0] );
-          } catch ( UnknownParamException upe ) {
-            // Unknown parameter is unexpected.
-            response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR );
-            String message = BaseMessages.getString(
-              PKG, "ExecuteJobServlet.Error.UnexpectedError", Const.CR + Const.getStackTracker( upe ) );
-            out.println( new WebResult( WebResult.STRING_ERROR, message ) );
           }
         }
       }
-    }
 
-    JobExecutionConfiguration jobExecutionConfiguration = new JobExecutionConfiguration();
-    LogLevel logLevel = LogLevel.getLogLevelForCode( levelOption );
-    jobExecutionConfiguration.setLogLevel( logLevel );
-    JobConfiguration jobConfiguration = new JobConfiguration( jobMeta, jobExecutionConfiguration );
+      JobExecutionConfiguration jobExecutionConfiguration = new JobExecutionConfiguration();
+      LogLevel logLevel = LogLevel.getLogLevelForCode( levelOption );
+      jobExecutionConfiguration.setLogLevel( logLevel );
+      JobConfiguration jobConfiguration = new JobConfiguration( jobMeta, jobExecutionConfiguration );
 
-    String carteObjectId = UUID.randomUUID().toString();
-    SimpleLoggingObject servletLoggingObject =
-      new SimpleLoggingObject( CONTEXT_PATH, LoggingObjectType.CARTE, null );
-    servletLoggingObject.setContainerObjectId( carteObjectId );
-    servletLoggingObject.setLogLevel( logLevel );
+      String carteObjectId = UUID.randomUUID().toString();
+      SimpleLoggingObject servletLoggingObject =
+        new SimpleLoggingObject( CONTEXT_PATH, LoggingObjectType.CARTE, null );
+      servletLoggingObject.setContainerObjectId( carteObjectId );
+      servletLoggingObject.setLogLevel( logLevel );
 
-    // Create the job and store in the list...
-    //
-    final Job job = new Job( repository, jobMeta, servletLoggingObject );
-
-    job.setRepository( repository );
-    job.setSocketRepository( getSocketRepository() );
-
-    getJobMap().addJob( jobMeta.getName(), carteObjectId, job, jobConfiguration );
-    job.setContainerObjectId( carteObjectId );
-
-    if ( repository != null ) {
-      // The repository connection is open: make sure we disconnect from the repository once we
-      // are done with this job.
+      // Create the job and store in the list...
       //
-      Repository finalRepository = repository;
-      job.addJobListener( new JobAdapter() {
-        @Override public void jobFinished( Job job ) {
-          finalRepository.disconnect();
-        }
-      } );
+      final Job job = new Job( repository, jobMeta, servletLoggingObject );
+
+      job.setRepository( repository );
+      job.setSocketRepository( getSocketRepository() );
+
+      getJobMap().addJob( jobMeta.getName(), carteObjectId, job, jobConfiguration );
+      job.setContainerObjectId( carteObjectId );
+
+      if ( repository != null ) {
+        // The repository connection is open: make sure we disconnect from the repository once we
+        // are done with this job.
+        //
+        job.addJobListener( new JobAdapter() {
+          @Override public void jobFinished( Job job ) {
+            repository.disconnect();
+          }
+        } );
+      }
+
+      try {
+        runJob( job );
+        WebResult webResult = new WebResult( WebResult.STRING_OK, "Job started", carteObjectId );
+        out.println( webResult.getXML() );
+        out.flush();
+
+      } catch ( Exception executionException ) {
+        String logging = KettleLogStore.getAppender().getBuffer( job.getLogChannelId(), false ).toString();
+        throw new KettleException( "Error executing job: " + logging, executionException );
+      }
+    } catch ( Exception ex ) {
+
+      out.println( new WebResult( WebResult.STRING_ERROR, BaseMessages.getString(
+        PKG, "ExecuteJobServlet.Error.UnexpectedError", Const.CR + Const.getStackTracker( ex ) ) ) );
     }
-
-    try {
-      runJob( job );
-      WebResult webResult = new WebResult( WebResult.STRING_OK, "Job started", carteObjectId );
-      out.println( webResult.getXML() );
-      out.flush();
-
-    } catch ( Exception executionException ) {
-      // Something went wrong while running the job.
-      response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR );
-
-      String logging = KettleLogStore.getAppender().getBuffer( job.getLogChannelId(), false ).toString();
-      String message = BaseMessages.getString( PKG, "ExecuteJobServlet.Error.WhileExecutingJob", jobOption, logging );
-      out.println( new WebResult( WebResult.STRING_ERROR, message ) );
-
-      return;
-    }
-
-    // Everything went well till the end.
-    response.setStatus( HttpServletResponse.SC_OK );
   }
 
   private JobMeta loadJob( Repository repository, String job ) throws KettleException {
@@ -356,22 +306,19 @@ public class ExecuteJobServlet extends BaseHttpServlet implements CartePluginInt
       RepositoryDirectoryInterface directory =
         repository.loadRepositoryDirectoryTree().findDirectory( directoryPath );
       if ( directory == null ) {
-        String message = BaseMessages.getString( PKG, "ExecuteJobServlet.Error.DirectoryPathNotFoundInRepository", directoryPath );
-        throw new KettleException( message );
+        throw new KettleException( "Unable to find directory path '" + directoryPath + "' in the repository" );
       }
 
       ObjectId jobID = repository.getJobId( name, directory );
       if ( jobID == null ) {
-        String message = BaseMessages.getString( PKG, "ExecuteJobServlet.Error.JobNotFoundInDirectory", name, directoryPath );
-        throw new KettleException( message );
+        throw new KettleException( "Unable to find job '" + name + "' in directory :" + directory );
       }
       JobMeta jobMeta = repository.loadJob( jobID, null );
       return jobMeta;
     }
   }
 
-  @VisibleForTesting
-  Repository openRepository( String repositoryName, String user, String pass ) throws KettleException {
+  private Repository openRepository( String repositoryName, String user, String pass ) throws KettleException {
 
     if ( Utils.isEmpty( repositoryName ) ) {
       return null;
@@ -381,8 +328,7 @@ public class ExecuteJobServlet extends BaseHttpServlet implements CartePluginInt
     repositoriesMeta.readData();
     RepositoryMeta repositoryMeta = repositoriesMeta.findRepository( repositoryName );
     if ( repositoryMeta == null ) {
-      String message = BaseMessages.getString( PKG, "ExecuteJobServlet.Error.UnableToFindRepository", repositoryName );
-      throw new KettleRepositoryNotFoundException( message );
+      throw new KettleException( "Unable to find repository: " + repositoryName );
     }
     PluginRegistry registry = PluginRegistry.getInstance();
     Repository repository = registry.loadClass( RepositoryPluginType.class, repositoryMeta, Repository.class );

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,8 +22,7 @@
 
 package org.pentaho.di.core;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Hashtable;
 
 /**
  * This class contains the counters for Kettle, the transformations, jobs and also the repository.
@@ -34,13 +33,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Counters {
   private static Counters counters = null;
-  private Map<String, Counter> counterTable = null;
+  private Hashtable<String, Counter> counterTable = null;
 
   private Counters() {
-    counterTable = new ConcurrentHashMap<>();
+    counterTable = new Hashtable<String, Counter>();
   }
 
-  public static Counters getInstance() {
+  public static final Counters getInstance() {
     if ( counters != null ) {
       return counters;
     }

@@ -87,7 +87,6 @@ public class LocalDirectory extends LocalFile implements Directory {
     localDirectory.setRoot( LocalFileProvider.NAME );
     localDirectory.setCanAddChildren( true );
     localDirectory.setCanEdit( true );
-    localDirectory.setHasChildren( true );
     return localDirectory;
   }
 }

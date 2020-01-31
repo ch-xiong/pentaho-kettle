@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -41,7 +41,6 @@ import org.pentaho.di.trans.TransMeta;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -86,8 +85,6 @@ public class MQTTConsumerTest {
   public void testHappyPath() {
     try {
       trans.prepareExecution( new String[] {} );
-      assertEquals( 1, trans.getSteps().size() );
-      assertEquals( "MQTT Consumer", trans.getSteps().get( 0 ).stepname );
     } catch ( KettleException e ) {
       throw new AssertionError( "Failed to initialize successfully", e );
     }

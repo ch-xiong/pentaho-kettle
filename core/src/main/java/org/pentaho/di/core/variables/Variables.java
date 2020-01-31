@@ -211,9 +211,8 @@ public class Variables implements VariableSpace {
     if ( initialized ) {
       // variables are already initialized
       if ( prop != null ) {
-        for ( Map.Entry<String, String> entry : prop.entrySet() ) {
-          String value = entry.getValue();
-          String key = entry.getKey();
+        for ( String key : prop.keySet() ) {
+          String value = prop.get( key );
           if ( !Utils.isEmpty( key ) ) {
             properties.put( key, Const.NVL( value, "" ) );
           }
@@ -224,9 +223,8 @@ public class Variables implements VariableSpace {
       // We have our own personal copy, so changes afterwards
       // to the input properties don't affect us.
       injection = new Hashtable<String, String>();
-      for ( Map.Entry<String, String> entry : prop.entrySet() ) {
-        String value = entry.getValue();
-        String key = entry.getKey();
+      for ( String key : prop.keySet() ) {
+        String value = prop.get( key );
         if ( !Utils.isEmpty( key ) ) {
           injection.put( key, Const.NVL( value, "" ) );
         }

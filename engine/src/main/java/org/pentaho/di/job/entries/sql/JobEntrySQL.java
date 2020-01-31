@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -65,54 +65,44 @@ import org.w3c.dom.Node;
  *
  */
 public class JobEntrySQL extends JobEntryBase implements Cloneable, JobEntryInterface {
-  public static final String USE_VARIABLE_SUBSTITUTION_TAG = "useVariableSubstitution";
-  public static final String SQLFROMFILE_TAG = "sqlfromfile";
-  public static final String SQLFILENAME_TAG = "sqlfilename";
-  public static final String SEND_ONE_STATEMENT_TAG = "sendOneStatement";
-  public static final String CONNECTION_TAG = "connection";
-  public static final String INDENT = "      ";
-  private static final Class<?> PKG = JobEntrySQL.class; // for i18n purposes, needed by Translator2!!
-  public static final String SQL_TAG = "sql";
-  public static final String ID_DATABASE = "id_database";
+  private static Class<?> PKG = JobEntrySQL.class; // for i18n purposes, needed by Translator2!!
 
   private String sql;
-  private DatabaseMeta databaseMeta;
+  private DatabaseMeta connection;
   private boolean useVariableSubstitution = false;
-  private boolean sqlFromFile = false;
-  private String sqlFilename;
+  private boolean sqlfromfile = false;
+  private String sqlfilename;
   private boolean sendOneStatement = false;
 
   public JobEntrySQL( String n ) {
     super( n, "" );
     sql = null;
-    databaseMeta = null;
+    connection = null;
   }
 
   public JobEntrySQL() {
     this( "" );
   }
 
-  @Override
   public Object clone() {
     JobEntrySQL je = (JobEntrySQL) super.clone();
     return je;
   }
 
   public String getXML() {
-    @SuppressWarnings( "StringBufferReplaceableByString" )
     StringBuilder retval = new StringBuilder( 200 );
 
     retval.append( super.getXML() );
 
-    retval.append( INDENT ).append( XMLHandler.addTagValue( "sql", sql ) );
-    retval.append( INDENT ).append(
-      XMLHandler.addTagValue( USE_VARIABLE_SUBSTITUTION_TAG, useVariableSubstitution ? "T" : "F" ) );
-    retval.append( INDENT ).append( XMLHandler.addTagValue( SQLFROMFILE_TAG, sqlFromFile ? "T" : "F" ) );
-    retval.append( INDENT ).append( XMLHandler.addTagValue( SQLFILENAME_TAG, sqlFilename ) );
-    retval.append( INDENT ).append( XMLHandler.addTagValue( SEND_ONE_STATEMENT_TAG, sendOneStatement ? "T" : "F" ) );
+    retval.append( "      " ).append( XMLHandler.addTagValue( "sql", sql ) );
+    retval.append( "      " ).append(
+      XMLHandler.addTagValue( "useVariableSubstitution", useVariableSubstitution ? "T" : "F" ) );
+    retval.append( "      " ).append( XMLHandler.addTagValue( "sqlfromfile", sqlfromfile ? "T" : "F" ) );
+    retval.append( "      " ).append( XMLHandler.addTagValue( "sqlfilename", sqlfilename ) );
+    retval.append( "      " ).append( XMLHandler.addTagValue( "sendOneStatement", sendOneStatement ? "T" : "F" ) );
 
-    retval.append( INDENT ).append(
-      XMLHandler.addTagValue( CONNECTION_TAG, databaseMeta == null ? null : databaseMeta.getName() ) );
+    retval.append( "      " ).append(
+      XMLHandler.addTagValue( "connection", connection == null ? null : connection.getName() ) );
 
     return retval.toString();
   }
@@ -122,22 +112,22 @@ public class JobEntrySQL extends JobEntryBase implements Cloneable, JobEntryInte
     try {
       super.loadXML( entrynode, databases, slaveServers );
       sql = XMLHandler.getTagValue( entrynode, "sql" );
-      String dbname = XMLHandler.getTagValue( entrynode, CONNECTION_TAG );
-      String sSubs = XMLHandler.getTagValue( entrynode, USE_VARIABLE_SUBSTITUTION_TAG );
+      String dbname = XMLHandler.getTagValue( entrynode, "connection" );
+      String sSubs = XMLHandler.getTagValue( entrynode, "useVariableSubstitution" );
 
       if ( sSubs != null && sSubs.equalsIgnoreCase( "T" ) ) {
         useVariableSubstitution = true;
       }
-      databaseMeta = DatabaseMeta.findDatabase( databases, dbname );
+      connection = DatabaseMeta.findDatabase( databases, dbname );
 
-      String ssql = XMLHandler.getTagValue( entrynode, SQLFROMFILE_TAG );
+      String ssql = XMLHandler.getTagValue( entrynode, "sqlfromfile" );
       if ( ssql != null && ssql.equalsIgnoreCase( "T" ) ) {
-        sqlFromFile = true;
+        sqlfromfile = true;
       }
 
-      sqlFilename = XMLHandler.getTagValue( entrynode, SQLFILENAME_TAG );
+      sqlfilename = XMLHandler.getTagValue( entrynode, "sqlfilename" );
 
-      String sOneStatement = XMLHandler.getTagValue( entrynode, SEND_ONE_STATEMENT_TAG );
+      String sOneStatement = XMLHandler.getTagValue( entrynode, "sendOneStatement" );
       if ( sOneStatement != null && sOneStatement.equalsIgnoreCase( "T" ) ) {
         sendOneStatement = true;
       }
@@ -147,49 +137,49 @@ public class JobEntrySQL extends JobEntryBase implements Cloneable, JobEntryInte
     }
   }
 
-  public void loadRep( Repository rep, IMetaStore metaStore, ObjectId idJobentry, List<DatabaseMeta> databases,
+  public void loadRep( Repository rep, IMetaStore metaStore, ObjectId id_jobentry, List<DatabaseMeta> databases,
     List<SlaveServer> slaveServers ) throws KettleException {
     try {
-      sql = rep.getJobEntryAttributeString( idJobentry, SQL_TAG );
-      String sSubs = rep.getJobEntryAttributeString( idJobentry, USE_VARIABLE_SUBSTITUTION_TAG );
+      sql = rep.getJobEntryAttributeString( id_jobentry, "sql" );
+      String sSubs = rep.getJobEntryAttributeString( id_jobentry, "useVariableSubstitution" );
       if ( sSubs != null && sSubs.equalsIgnoreCase( "T" ) ) {
         useVariableSubstitution = true;
       }
 
-      String ssql = rep.getJobEntryAttributeString( idJobentry, SQLFROMFILE_TAG );
+      String ssql = rep.getJobEntryAttributeString( id_jobentry, "sqlfromfile" );
       if ( ssql != null && ssql.equalsIgnoreCase( "T" ) ) {
-        sqlFromFile = true;
+        sqlfromfile = true;
       }
 
-      String ssendOneStatement = rep.getJobEntryAttributeString( idJobentry, SEND_ONE_STATEMENT_TAG );
+      String ssendOneStatement = rep.getJobEntryAttributeString( id_jobentry, "sendOneStatement" );
       if ( ssendOneStatement != null && ssendOneStatement.equalsIgnoreCase( "T" ) ) {
         sendOneStatement = true;
       }
 
-      sqlFilename = rep.getJobEntryAttributeString( idJobentry, SQLFILENAME_TAG );
+      sqlfilename = rep.getJobEntryAttributeString( id_jobentry, "sqlfilename" );
 
-      databaseMeta = rep.loadDatabaseMetaFromJobEntryAttribute( idJobentry, CONNECTION_TAG, ID_DATABASE, databases );
+      connection = rep.loadDatabaseMetaFromJobEntryAttribute( id_jobentry, "connection", "id_database", databases );
     } catch ( KettleDatabaseException dbe ) {
-      throw new KettleException( "Unable to load job entry of type 'sql' from the repository with idJobentry="
-        + idJobentry, dbe );
+      throw new KettleException( "Unable to load job entry of type 'sql' from the repository with id_jobentry="
+        + id_jobentry, dbe );
     }
   }
 
   // Save the attributes of this job entry
   //
-  public void saveRep( Repository rep, IMetaStore metaStore, ObjectId idJob ) throws KettleException {
+  public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_job ) throws KettleException {
     try {
-      rep.saveDatabaseMetaJobEntryAttribute( idJob, getObjectId(), CONNECTION_TAG, ID_DATABASE, databaseMeta );
+      rep.saveDatabaseMetaJobEntryAttribute( id_job, getObjectId(), "connection", "id_database", connection );
 
-      rep.saveJobEntryAttribute( idJob, getObjectId(), SQL_TAG, sql );
-      rep.saveJobEntryAttribute( idJob, getObjectId(), USE_VARIABLE_SUBSTITUTION_TAG, useVariableSubstitution
+      rep.saveJobEntryAttribute( id_job, getObjectId(), "sql", sql );
+      rep.saveJobEntryAttribute( id_job, getObjectId(), "useVariableSubstitution", useVariableSubstitution
         ? "T" : "F" );
-      rep.saveJobEntryAttribute( idJob, getObjectId(), SQLFROMFILE_TAG, sqlFromFile ? "T" : "F" );
-      rep.saveJobEntryAttribute( idJob, getObjectId(), SQLFILENAME_TAG, sqlFilename );
-      rep.saveJobEntryAttribute( idJob, getObjectId(), SEND_ONE_STATEMENT_TAG, sendOneStatement ? "T" : "F" );
+      rep.saveJobEntryAttribute( id_job, getObjectId(), "sqlfromfile", sqlfromfile ? "T" : "F" );
+      rep.saveJobEntryAttribute( id_job, getObjectId(), "sqlfilename", sqlfilename );
+      rep.saveJobEntryAttribute( id_job, getObjectId(), "sendOneStatement", sendOneStatement ? "T" : "F" );
     } catch ( KettleDatabaseException dbe ) {
       throw new KettleException(
-        "Unable to save job entry of type 'sql' to the repository for idJob=" + idJob, dbe );
+        "Unable to save job entry of type 'sql' to the repository for id_job=" + id_job, dbe );
     }
   }
 
@@ -202,11 +192,11 @@ public class JobEntrySQL extends JobEntryBase implements Cloneable, JobEntryInte
   }
 
   public String getSQLFilename() {
-    return sqlFilename;
+    return sqlfilename;
   }
 
-  public void setSQLFilename( String sqlFilename ) {
-    this.sqlFilename = sqlFilename;
+  public void setSQLFilename( String sqlfilename ) {
+    this.sqlfilename = sqlfilename;
   }
 
   public boolean getUseVariableSubstitution() {
@@ -217,100 +207,124 @@ public class JobEntrySQL extends JobEntryBase implements Cloneable, JobEntryInte
     useVariableSubstitution = subs;
   }
 
-  public void setSQLFromFile( boolean sqlFromFileIn ) {
-    sqlFromFile = sqlFromFileIn;
+  public void setSQLFromFile( boolean sqlfromfilein ) {
+    sqlfromfile = sqlfromfilein;
   }
 
   public boolean getSQLFromFile() {
-    return sqlFromFile;
+    return sqlfromfile;
   }
 
   public boolean isSendOneStatement() {
     return sendOneStatement;
   }
 
-  public void setSendOneStatement( boolean sendOneStatementIn ) {
-    sendOneStatement = sendOneStatementIn;
+  public void setSendOneStatement( boolean sendOneStatementin ) {
+    sendOneStatement = sendOneStatementin;
   }
 
   public void setDatabase( DatabaseMeta database ) {
-    this.databaseMeta = database;
+    this.connection = database;
   }
 
   public DatabaseMeta getDatabase() {
-    return databaseMeta;
+    return connection;
   }
 
-  public Result execute( Result result, int nr ) {
+  public Result execute( Result previousResult, int nr ) {
+    Result result = previousResult;
 
-    if ( databaseMeta != null ) {
-      try ( Database db = new Database( this, databaseMeta ) ) {
-        String theSql = sqlFromFile ? buildSqlFromFile() : sql;
-        if ( Utils.isEmpty( theSql ) ) {
-          return result;
-        }
-        db.shareVariablesWith( this );
+    if ( connection != null ) {
+      Database db = new Database( this, connection );
+      FileObject SQLfile = null;
+      db.shareVariablesWith( this );
+      try {
+        String theSQL = null;
         db.connect( parentJob.getTransactionId(), null );
-        // let it run
-        if ( useVariableSubstitution ) {
-          theSql = environmentSubstitute( theSql );
-        }
-        if ( isDetailed() ) {
-          logDetailed( BaseMessages.getString( PKG, "JobSQL.Log.SQlStatement", theSql ) );
-        }
-        if ( sendOneStatement ) {
-          db.execStatement( theSql );
+
+        if ( sqlfromfile ) {
+          if ( sqlfilename == null ) {
+            throw new KettleDatabaseException( BaseMessages.getString( PKG, "JobSQL.NoSQLFileSpecified" ) );
+          }
+
+          try {
+            String realfilename = environmentSubstitute( sqlfilename );
+            SQLfile = KettleVFS.getFileObject( realfilename, this );
+            if ( !SQLfile.exists() ) {
+              logError( BaseMessages.getString( PKG, "JobSQL.SQLFileNotExist", realfilename ) );
+              throw new KettleDatabaseException( BaseMessages.getString(
+                PKG, "JobSQL.SQLFileNotExist", realfilename ) );
+            }
+            if ( isDetailed() ) {
+              logDetailed( BaseMessages.getString( PKG, "JobSQL.SQLFileExists", realfilename ) );
+            }
+
+            InputStream IS = KettleVFS.getInputStream( SQLfile );
+            try {
+              InputStreamReader BIS = new InputStreamReader( new BufferedInputStream( IS, 500 ) );
+              StringBuilder lineSB = new StringBuilder( 256 );
+              lineSB.setLength( 0 );
+
+              BufferedReader buff = new BufferedReader( BIS );
+              String sLine = null;
+              theSQL = Const.CR;
+
+              while ( ( sLine = buff.readLine() ) != null ) {
+                if ( Utils.isEmpty( sLine ) ) {
+                  theSQL = theSQL + Const.CR;
+                } else {
+                  theSQL = theSQL + Const.CR + sLine;
+                }
+              }
+            } finally {
+              IS.close();
+            }
+          } catch ( Exception e ) {
+            throw new KettleDatabaseException( BaseMessages.getString( PKG, "JobSQL.ErrorRunningSQLfromFile" ), e );
+          }
+
         } else {
-          db.execStatements( theSql );
+          theSQL = sql;
+        }
+        if ( !Utils.isEmpty( theSQL ) ) {
+          // let it run
+          if ( useVariableSubstitution ) {
+            theSQL = environmentSubstitute( theSQL );
+          }
+          if ( isDetailed() ) {
+            logDetailed( BaseMessages.getString( PKG, "JobSQL.Log.SQlStatement", theSQL ) );
+          }
+          if ( sendOneStatement ) {
+            db.execStatement( theSQL );
+          } else {
+            db.execStatements( theSQL );
+          }
         }
       } catch ( KettleDatabaseException je ) {
         result.setNrErrors( 1 );
         logError( BaseMessages.getString( PKG, "JobSQL.ErrorRunJobEntry", je.getMessage() ) );
+      } finally {
+        db.disconnect();
+        if ( SQLfile != null ) {
+          try {
+            SQLfile.close();
+          } catch ( Exception e ) {
+            // Ignore errors
+          }
+        }
       }
     } else {
       result.setNrErrors( 1 );
       logError( BaseMessages.getString( PKG, "JobSQL.NoDatabaseConnection" ) );
     }
 
-    result.setResult( result.getNrErrors() == 0 );
+    if ( result.getNrErrors() == 0 ) {
+      result.setResult( true );
+    } else {
+      result.setResult( false );
+    }
+
     return result;
-  }
-
-  public String buildSqlFromFile() throws KettleDatabaseException {
-    if ( sqlFilename == null ) {
-      throw new KettleDatabaseException( BaseMessages.getString( PKG, "JobSQL.NoSQLFileSpecified" ) );
-    }
-
-    String realFilename = environmentSubstitute( sqlFilename );
-    try ( FileObject sqlFile = KettleVFS.getFileObject( realFilename, this ) ) {
-      if ( !sqlFile.exists() ) {
-        logError( BaseMessages.getString( PKG, "JobSQL.SQLFileNotExist", realFilename ) );
-        throw new KettleDatabaseException( BaseMessages.getString(
-          PKG, "JobSQL.SQLFileNotExist", realFilename ) );
-      }
-      if ( isDetailed() ) {
-        logDetailed( BaseMessages.getString( PKG, "JobSQL.SQLFileExists", realFilename ) );
-      }
-
-      try ( InputStream inputStream = KettleVFS.getInputStream( sqlFile ) ) {
-        InputStreamReader bufferedStream = new InputStreamReader( new BufferedInputStream( inputStream, 500 ) );
-
-        BufferedReader buff = new BufferedReader( bufferedStream );
-        String sLine;
-        StringBuilder sqlBuilder = new StringBuilder( Const.CR );
-
-        while ( ( sLine = buff.readLine() ) != null ) {
-          if ( Utils.isEmpty( sLine ) ) {
-            sqlBuilder.append( Const.CR );
-          } else {
-            sqlBuilder.append( Const.CR ).append( sLine );
-          }
-        }
-        return sqlBuilder.toString();
-      }
-    } catch ( Exception e ) {
-      throw new KettleDatabaseException( BaseMessages.getString( PKG, "JobSQL.ErrorRunningSQLfromFile" ), e );
-    }
   }
 
   public boolean evaluates() {
@@ -322,15 +336,15 @@ public class JobEntrySQL extends JobEntryBase implements Cloneable, JobEntryInte
   }
 
   public DatabaseMeta[] getUsedDatabaseConnections() {
-    return new DatabaseMeta[] { databaseMeta, };
+    return new DatabaseMeta[] { connection, };
   }
 
   public List<ResourceReference> getResourceDependencies( JobMeta jobMeta ) {
     List<ResourceReference> references = super.getResourceDependencies( jobMeta );
-    if ( databaseMeta != null ) {
+    if ( connection != null ) {
       ResourceReference reference = new ResourceReference( this );
-      reference.getEntries().add( new ResourceEntry( databaseMeta.getHostname(), ResourceType.SERVER ) );
-      reference.getEntries().add( new ResourceEntry( databaseMeta.getDatabaseName(), ResourceType.DATABASENAME ) );
+      reference.getEntries().add( new ResourceEntry( connection.getHostname(), ResourceType.SERVER ) );
+      reference.getEntries().add( new ResourceEntry( connection.getDatabaseName(), ResourceType.DATABASENAME ) );
       references.add( reference );
     }
     return references;

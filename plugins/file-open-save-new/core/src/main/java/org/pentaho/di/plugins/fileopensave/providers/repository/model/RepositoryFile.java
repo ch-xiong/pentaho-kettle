@@ -36,11 +36,9 @@ public class RepositoryFile extends RepositoryObject implements File {
   public static final String JOB = "job";
   public static final String KTR = ".ktr";
   public static final String KJB = ".kjb";
-  public static final String DELIMITER = "/";
   private String username;
 
   public RepositoryFile() {
-    // Necessary for JSON marshalling
   }
 
   public String getUsername() {
@@ -59,13 +57,7 @@ public class RepositoryFile extends RepositoryObject implements File {
     repositoryFile.setExtension( repositoryObject.getObjectType().getExtension() );
     repositoryFile.setDate( repositoryObject.getModifiedDate() );
     repositoryFile.setParent( repositoryObject.getRepositoryDirectory().getPath() );
-    String rootPath = repositoryObject.getRepositoryDirectory().getPath();
-    rootPath = rootPath.equals( DELIMITER ) ? rootPath : rootPath + DELIMITER;
-    String filename = repositoryObject.getName();
-    if ( !filename.endsWith( repositoryFile.getExtension() ) ) {
-      filename += repositoryFile.getExtension();
-    }
-    repositoryFile.setPath( rootPath + filename );
+    repositoryFile.setPath( repositoryObject.getRepositoryDirectory().getPath() + "/" + repositoryObject.getName() );
     repositoryFile.setRoot( RepositoryFileProvider.NAME );
     repositoryFile.setCanEdit( true );
 
@@ -91,8 +83,8 @@ public class RepositoryFile extends RepositoryObject implements File {
   }
 
   public static String stripExtension( String filename ) {
-    if ( filename.indexOf( '.' ) != -1 ) {
-      return filename.substring( 0, filename.lastIndexOf( '.' ) );
+    if ( filename.indexOf( "." ) > 0 ) {
+      return filename.substring( 0, filename.lastIndexOf( "." ) );
     }
     return filename;
   }

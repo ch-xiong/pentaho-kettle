@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2017-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -30,10 +30,8 @@ import java.util.regex.Pattern;
 public class Util {
 
   public static boolean isFiltered( String value, String filter ) {
-    value = value.toLowerCase();
-    filter = filter.toLowerCase();
-    filter = filter.replace( ".", "\\." );
-    filter = filter.replace( "*", ".*" );
+    filter = filter.replace(".", "\\.");
+    filter = filter.replace("*", ".*");
 
     return !Pattern.matches( filter, value );
   }

@@ -56,9 +56,7 @@ import org.pentaho.di.shared.SharedObjectBase;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.w3c.dom.Node;
 
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1110,9 +1108,7 @@ public class DatabaseMeta extends SharedObjectBase implements Cloneable, XMLInte
     String url =  environmentSubstitute( baseUrl );
 
     if ( databaseInterface.supportsOptionsInURL() ) {
-      Map<String, String> extraOptions = getExtraOptions();
-      databaseInterface.putOptionalOptions( extraOptions );
-      url = appendExtraOptions( url, extraOptions );
+      url = appendExtraOptions( url, getExtraOptions() );
     }
     // else {
     // We need to put all these options in a Properties file later (Oracle & Co.)
@@ -1265,9 +1261,8 @@ public class DatabaseMeta extends SharedObjectBase implements Cloneable, XMLInte
     final Map<String, String> extraOptions = getExtraOptions();
 
     final Map<String, String> defaultOptions = databaseInterface.getDefaultOptions();
-    for ( Map.Entry<String, String> entry : defaultOptions.entrySet() ) {
-      String option = entry.getKey();
-      String value = entry.getValue();
+    for ( String option : defaultOptions.keySet() ) {
+      String value = defaultOptions.get( option );
       String[] split = option.split( "[.]", 2 );
       if ( !extraOptions.containsKey( option ) && split.length == 2 ) {
         addExtraOption( split[0], split[1], value );
@@ -3088,22 +3083,5 @@ public class DatabaseMeta extends SharedObjectBase implements Cloneable, XMLInte
    */
   protected DatabaseInterface getDbInterface( String typeCode ) throws KettleDatabaseException {
     return getDatabaseInterface( typeCode );
-  }
-
-  public ResultSet getTables( DatabaseMetaData databaseMetaData, String schema, String table,
-                              String[] tableTypesToGet ) throws SQLException {
-    return databaseInterface.getTables( databaseMetaData, this, schema, table, tableTypesToGet );
-  }
-
-  public ResultSet getSchemas( DatabaseMetaData databaseMetaData ) throws SQLException {
-    return databaseInterface.getSchemas( databaseMetaData, this );
-  }
-
-  public String getNamedCluster() {
-    return databaseInterface.getNamedCluster();
-  }
-
-  public void setNamedCluster( String namedCluster ) {
-    databaseInterface.setNamedCluster( namedCluster );
   }
 }

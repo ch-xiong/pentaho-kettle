@@ -70,6 +70,7 @@ define(
          * @private
          */
         function httpPost(url, data) {
+          console.log("Post URL:" + url);
           return _wrapHttp("POST", url, data);
         }
 

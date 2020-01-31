@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,11 @@ package org.pentaho.di.repository.pur;
 import static org.junit.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 import java.net.ConnectException;
 
-import com.sun.xml.ws.client.ClientTransportException;
 import org.junit.Before;
 import org.junit.Test;
-import org.pentaho.di.repository.KettleAuthenticationException;
 import org.pentaho.di.repository.KettleRepositoryLostException;
 
 public class UnifiedRepositoryInvocationHandlerTest {
@@ -36,14 +33,11 @@ public class UnifiedRepositoryInvocationHandlerTest {
     Object throwSomeException();
 
     Object throwChainedConnectException();
-
-    Object throwClientTransportException();
   };
 
   private static final Object returnValue = "return-value";
   private static final RuntimeException rte = new RuntimeException( "some-exception" );
   private static final ConnectException connectException = new ConnectException();
-  private static final ClientTransportException clientTransportExceptionException = mock( ClientTransportException.class );
 
   private static final IFace wrappee = new IFace() {
 
@@ -60,11 +54,6 @@ public class UnifiedRepositoryInvocationHandlerTest {
     @Override
     public Object throwChainedConnectException() {
       throw new RuntimeException( "wrapper-exception", connectException );
-    }
-
-    @Override
-    public Object throwClientTransportException() {
-      throw new RuntimeException( "wrapper-exception", clientTransportExceptionException );
     }
 
   };
@@ -105,24 +94,6 @@ public class UnifiedRepositoryInvocationHandlerTest {
       assertNotNull( "Should have found the original ConnectException" );
     } catch ( Throwable other ) {
       fail( "Should not catch something other than KettleRepositoryLostException" );
-    }
-  }
-
-  @Test
-  public void testThrowingClientTransportException() {
-    try {
-      testee.throwClientTransportException();
-    } catch ( KettleAuthenticationException kae ) {
-      Throwable found = kae;
-      while ( found != null ) {
-        if ( clientTransportExceptionException.equals( found ) ) {
-          break;
-        }
-        found = found.getCause();
-      }
-      assertNotNull( "Should have found the original ClientTransportException" );
-    } catch ( Throwable other ) {
-      fail( "Should not catch something other than KettleAuthenticationException" );
     }
   }
 }

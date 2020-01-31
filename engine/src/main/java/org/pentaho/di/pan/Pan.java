@@ -24,7 +24,6 @@ package org.pentaho.di.pan;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import org.pentaho.di.base.CommandExecutorCodes;
 import org.pentaho.di.base.Params;
@@ -42,7 +41,6 @@ import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.parameters.NamedParamsDefault;
 import org.pentaho.di.core.parameters.UnknownParamException;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.i18n.LanguageChoice;
 import org.pentaho.di.kitchen.Kitchen;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -60,7 +58,6 @@ public class Pan {
   public static void main( String[] a ) throws Exception {
     KettleClientEnvironment.getInstance().setClient( KettleClientEnvironment.ClientType.PAN );
     KettleEnvironment.init();
-    Locale.setDefault( LanguageChoice.getInstance().getDefaultLocale() );
 
     List<String> args = new ArrayList<String>();
     for ( int i = 0; i < a.length; i++ ) {
@@ -75,7 +72,7 @@ public class Pan {
     StringBuilder optionListtrans, optionListrep, optionExprep, optionNorep, optionSafemode;
     StringBuilder optionVersion, optionJarFilename, optionListParam, optionMetrics, initialDir;
     StringBuilder optionResultSetStepName, optionResultSetCopyNumber;
-    StringBuilder optionBase64Zip, optionUuid;
+    StringBuilder optionBase64Zip;
 
     NamedParams optionParams = new NamedParamsDefault();
 
@@ -156,9 +153,6 @@ public class Pan {
         new CommandLineOption(
           "zip", "Base64Zip", optionBase64Zip =
           new StringBuilder(), false, true ),
-        new CommandLineOption(
-                "uuid", "UUID", optionUuid =
-                new StringBuilder(), false, true ),
         new CommandLineOption(
           "metrics", BaseMessages.getString( PKG, "Pan.ComdLine.Metrics" ), optionMetrics =
           new StringBuilder(), true, false ), maxLogLinesOption, maxLogTimeoutOption };
@@ -243,8 +237,7 @@ public class Pan {
         }
       }
 
-      Params.Builder builder = optionUuid.length() > 0 ? new Params.Builder( optionUuid.toString() ) : new Params.Builder();
-      Params transParams = ( builder )
+      Params transParams = ( new Params.Builder() )
               .blockRepoConns( optionNorep.toString() )
               .repoName( optionRepname.toString() )
               .repoUsername( optionUsername.toString() )

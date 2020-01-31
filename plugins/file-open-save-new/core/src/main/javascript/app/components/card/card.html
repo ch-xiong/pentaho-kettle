@@ -3,11 +3,10 @@
      ng-hide="file.inResult === false"
      ng-click="vm.selectFile(file)"
      ng-dblclick="vm.onClick({file: file})"
-     title="{{file.name}}&#013;{{file.parent}}"
+     title="{{file.name}}&#013;{{file.path}}"
      ng-class="{cardTrans: file.type === 'transformation',
                 cardJob: file.type === 'job',
-                selected: vm.selectedFile === file,
-                last: $last}">
+                selected: vm.selectedFile === file}">
   <div class="cardMiddle">
     <div class="cardTitleAndDate">
       <div class="cardTitle">
@@ -20,3 +19,4 @@
     <div class="cardTypeIcon"></div>
   </div>
 </div>
+<div class="bottomSpacer"></div>

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -23,7 +23,6 @@
 package org.pentaho.di.ui.spoon.partition;
 
 import org.eclipse.swt.widgets.Shell;
-import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
 
 /**
@@ -31,18 +30,9 @@ import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
  */
 public class PartitionMethodSelector {
 
-  private static final Class<?> PKG = PartitionMethodSelector.class;
-
-  public static final String STRING_PARTITION_METHOD_SELECTOR_DIALOG_TITLE =
-          BaseMessages.getString( PKG, "PartitionMethodSelector.DIALOG_TITLE" );
-
-  public static final String STRING_PARTITION_METHOD_SELECTOR_DIALOG_TEXT =
-          BaseMessages.getString( PKG, "PartitionMethodSelector.DIALOG_TEXT" );
-
   public String askForPartitionMethod( Shell shell, PartitionSettings settings ) {
     EnterSelectionDialog dialog =
-      new EnterSelectionDialog( shell, settings.getOptions(), STRING_PARTITION_METHOD_SELECTOR_DIALOG_TITLE,
-              STRING_PARTITION_METHOD_SELECTOR_DIALOG_TEXT );
+      new EnterSelectionDialog( shell, settings.getOptions(), "Partioning method", "Select the partitioning method" );
     return dialog.open( settings.getDefaultSelectedMethodIndex() );
   }
 

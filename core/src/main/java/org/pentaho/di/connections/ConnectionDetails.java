@@ -22,9 +22,6 @@
 
 package org.pentaho.di.connections;
 
-import java.util.Collections;
-import java.util.Map;
-
 /**
  * Created by bmorrise on 2/13/19.
  */
@@ -36,13 +33,4 @@ public interface ConnectionDetails {
   String getType();
 
   String getDescription();
-
-  /**
-   * Gets props associated with this ConnectionDetails.
-   * Allows implementors to expose connection properties without
-   * requiring clients to have the implementation as a dependency.
-   */
-  default Map<String, String> getProperties() {
-    return Collections.emptyMap();
-  }
 }

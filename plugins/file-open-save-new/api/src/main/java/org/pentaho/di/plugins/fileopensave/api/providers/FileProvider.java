@@ -22,9 +22,7 @@
 
 package org.pentaho.di.plugins.fileopensave.api.providers;
 
-import org.pentaho.di.plugins.fileopensave.api.file.FileDetails;
 import org.pentaho.di.plugins.fileopensave.api.providers.exception.FileException;
-import org.pentaho.di.ui.core.FileDialogOperation;
 
 import java.io.InputStream;
 import java.util.List;
@@ -42,30 +40,13 @@ public interface FileProvider<T extends File> {
 
   boolean isAvailable();
 
-  /**
-   * Get entire tree (no filter)
-   *
-   * @return
-   */
   Tree getTree();
 
-  /**
-   * Optional method to get a filtered tree based on the connection type
-   *
-   * @param connectionTypes
-   * @return filteredTree
-   */
-  default Tree getTree( List<String> connectionTypes ) {
-    return getTree();
-  }
-
-  List<T> getFiles( T file, String filters ) throws FileException;
+  List<T> getFiles( T file, String filters );
 
   List<T> delete( List<T> files ) throws FileException;
 
   T add( T folder ) throws FileException;
-
-  T getFile( T file );
 
   boolean fileExists( T dir, String path ) throws FileException;
 
@@ -86,8 +67,4 @@ public interface FileProvider<T extends File> {
   T writeFile( InputStream inputStream, T destDir, String path, boolean overwrite ) throws FileException;
 
   T getParent( T file );
-
-  void clearProviderCache();
-
-  void setFileProperties( FileDetails fileDetails, FileDialogOperation fileDialogOperation );
 }

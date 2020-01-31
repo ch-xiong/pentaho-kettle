@@ -29,7 +29,7 @@ define([
       link: function(scope, element, attrs) {
         var scrollClass = "";
         $timeout(function() {
-          scrollClass = ($state.is("save") || $state.is("saveTo") || $state.is("saveToFileFolder")) ? "scrollTableSave" : "scrollTableOpen";
+          scrollClass = $state.is("save") ? "scrollTableSave" : "scrollTableOpen";
         });
 
         var table = angular.element(element[0].querySelector("#filesTableBody"));
@@ -66,7 +66,7 @@ define([
          * Sets the class of the element if scrolling is needed. Also, sets css for the elements within file area.
          */
         function setScrollTableClass() {
-          if (!scope.vm.folder) {
+          if (scope.vm.folder.name === "Recents" && scope.vm.folder.path === "Recents") {
             return;
           }
           bodyWrapper.css("height", "calc(100% - 31px)");

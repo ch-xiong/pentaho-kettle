@@ -12,21 +12,22 @@
     <parent>
         <groupId>org.pentaho.di</groupId>
         <artifactId>pdi-core</artifactId>
-        <version>9.0.0.0-SNAPSHOT</version>
+        <version>8.3.0.0-371</version>
     </parent>
 
     <properties>
         <pdi-engine-spark.version>${project.version}</pdi-engine-spark.version>
         <rxjava.version>2.2.3</rxjava.version>
 
-        <pentaho-json.version>9.0.0.0-SNAPSHOT</pentaho-json.version>
+        <pentaho-json.version>8.3.0.0-371</pentaho-json.version>
         <pdi-spark-driver.version>${project.version}</pdi-spark-driver.version>
-        <pdi-osgi-bridge.version>9.0.0.0-SNAPSHOT</pdi-osgi-bridge.version>
-        <commons-database.version>9.0.0.0-SNAPSHOT</commons-database.version>
-        <pentaho-registry.version>9.0.0.0-SNAPSHOT</pentaho-registry.version>
-        <pentaho-metaverse.version>9.0.0.0-SNAPSHOT</pentaho-metaverse.version>
-        <platform.version>9.0.0.0-SNAPSHOT</platform.version>
-        <pentaho-reporting.version>9.0.0.0-SNAPSHOT</pentaho-reporting.version>
+        <pdi-osgi-bridge.version>8.3.0.0-371</pdi-osgi-bridge.version>
+        <commons-database.version>8.3.0.0-371</commons-database.version>
+        <pentaho-registry.version>8.3.0.0-371</pentaho-registry.version>
+        <pentaho-metaverse.version>8.3.0.0-371</pentaho-metaverse.version>
+        <platform.version>8.3.0.0-371</platform.version>
+        <pentaho-reporting.version>8.3.0.0-371</pentaho-reporting.version>
+        <pentaho-hadoop-shims-api.version>8.3.2019.05.00-371</pentaho-hadoop-shims-api.version>
 
         <!-- third party -->
         <derbyclient.version>10.2.1.6</derbyclient.version>
@@ -35,8 +36,9 @@
         <jt400.version>6.1</jt400.version>
         <LucidDbClient-minimal.version>0.9.4</LucidDbClient-minimal.version>
         <sapdbc.version>7.4.4</sapdbc.version>
-        <sqlite-jdbc.version>3.27.2.1</sqlite-jdbc.version>
-        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+        <sqlite-jdbc.version>3.7.2</sqlite-jdbc.version>
+        <geronimo-servlet_3.0_spec.version>1.0</geronimo-servlet_3.0_spec.version>
+        <apache-log4j-extras>1.2.17</apache-log4j-extras>
         <webservices-api.version>2.3.1</webservices-api.version>
         <webservices-rt.version>2.3.1</webservices-rt.version>
         <asm.version>3.2</asm.version>
@@ -63,6 +65,11 @@
             <groupId>pentaho-kettle</groupId>
             <artifactId>kettle-core</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.pentaho</groupId>
+            <artifactId>pentaho-hadoop-shims-api</artifactId>
+            <version>${pentaho-hadoop-shims-api.version}</version>
         </dependency>
         <dependency>
             <groupId>pentaho-kettle</groupId>
@@ -351,26 +358,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>org.apache.karaf.diagnostic</groupId>
-            <artifactId>org.apache.karaf.diagnostic.boot</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.karaf.specs</groupId>
-            <artifactId>org.apache.karaf.specs.activator</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
 
         <!-- Third-party JDBC dependencies -->
         <dependency>
@@ -470,9 +457,15 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>${javax.servlet-api.version}</version>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-servlet_3.0_spec</artifactId>
+            <version>${geronimo-servlet_3.0_spec.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Spring -->
@@ -511,6 +504,7 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>apache-log4j-extras</artifactId>
+            <version>${apache-log4j-extras}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

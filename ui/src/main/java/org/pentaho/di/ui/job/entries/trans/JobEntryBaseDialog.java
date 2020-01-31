@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -69,7 +69,6 @@ import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.job.entry.JobEntryDialog;
 import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.di.ui.util.ParameterTableHelper;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -83,8 +82,6 @@ public abstract class JobEntryBaseDialog extends JobEntryDialog {
 
   public static Class<?> PKG = JobEntryTrans.class;
   public static final int IS_PENTAHO = 1;
-
-  protected ParameterTableHelper parameterTableHelper = new ParameterTableHelper();
 
   protected Label wlPath;
   protected TextVar wPath;
@@ -186,12 +183,6 @@ public abstract class JobEntryBaseDialog extends JobEntryDialog {
         getJobEntry().setChanged();
       }
     };
-
-    ModifyListener lsModParams = modifyEvent -> {
-      parameterTableHelper.checkTableOnMod( modifyEvent );
-      getJobEntry().setChanged();
-    };
-
 
     FormLayout formLayout = new FormLayout();
     formLayout.marginWidth = 15;
@@ -552,7 +543,7 @@ public abstract class JobEntryBaseDialog extends JobEntryDialog {
 
     wParameters =
       new TableView( jobMeta, wParameterComp, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, colinf, parameterRows, false,
-        lsModParams, props, false );
+        lsMod, props, false );
     props.setLook( wParameters );
     FormData fdParameters = new FormData();
     fdParameters.left = new FormAttachment( 0, 0 );
@@ -561,13 +552,6 @@ public abstract class JobEntryBaseDialog extends JobEntryDialog {
     fdParameters.bottom = new FormAttachment( wbGetParams, -10 );
     wParameters.setLayoutData( fdParameters );
     wParameters.getTable().addListener( SWT.Resize, new ColumnsResizer( 0, 33, 33, 33 ) );
-
-    parameterTableHelper.setParameterTableView( wParameters );
-    parameterTableHelper.setUpDisabledListeners();
-    // Add disabled listeners to columns
-    colinf[0].setDisabledListener( parameterTableHelper.getVarDisabledListener() );
-    colinf[1].setDisabledListener( parameterTableHelper.getFieldDisabledListener() );
-    colinf[2].setDisabledListener( parameterTableHelper.getInputDisabledListener() );
 
     FormData fdParametersComp = new FormData();
     fdParametersComp.left = new FormAttachment( 0, 0 );

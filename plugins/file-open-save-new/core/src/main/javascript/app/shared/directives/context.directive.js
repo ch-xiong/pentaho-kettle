@@ -31,16 +31,10 @@ define([
           scope.$apply(function () {
             event.stopPropagation();
             event.preventDefault();
-            var contextHeight = contextMenu.outerHeight();
-            var contextWidth = contextMenu.outerWidth();
-            var documentHeight = $document.height();
-            var documentWidth = $document.width();
-            var contextY = event.clientY + contextHeight > documentHeight ? documentHeight - contextHeight : event.clientY;
-            var contextX = event.clientX + contextWidth > documentWidth ? documentWidth - contextWidth : event.clientX;
             contextMenu.css({
               'display': 'block',
-              'top': contextY + 'px',
-              'left': contextX + 'px'
+              'top': event.clientY + 'px',
+              'left': event.clientX + 'px'
             })
           });
         });
@@ -62,6 +56,6 @@ define([
 
   return {
     name: "context",
-    options: ["$document", context]
+    options: ["$parse", context]
   };
 });

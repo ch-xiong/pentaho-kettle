@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,8 +81,8 @@ public interface GetFieldsCapableStepDialog<StepMetaType extends BaseStepMeta> {
   TableView getFieldsTable();
 
   default TableItem findTableItem( final String fieldName ) {
-    for ( int i = 0; i < getFieldsTable().getTable().getItemCount(); i++ ) {
-      final TableItem item = getFieldsTable().getTable().getItem( i );
+    for ( int i = 0; i < getFieldsTable().table.getItemCount(); i++ ) {
+      final TableItem item = getFieldsTable().table.getItem( i );
       int fieldNameIndex = getFieldsTable().hasIndexColumn() ? 1 : 0;
       final String itemFieldName = item.getText( fieldNameIndex );
       if ( itemFieldName != null && itemFieldName.equals( fieldName ) ) {
@@ -92,16 +93,15 @@ public interface GetFieldsCapableStepDialog<StepMetaType extends BaseStepMeta> {
   }
 
   default List<String> getNewFieldNames( final String[] incomingFieldNames ) {
-    final Set<String> fieldNamesInTable = new HashSet<>();
-    for ( int i = 0; i < getFieldsTable().getTable().getItemCount(); i++ ) {
-      final TableItem item = getFieldsTable().getTable().getItem( i );
+    final Set<String> fieldNamesInTable = new HashSet();
+    for ( int i = 0; i < getFieldsTable().table.getItemCount(); i++ ) {
+      final TableItem item = getFieldsTable().table.getItem( i );
       int fieldNameIndex = getFieldsTable().hasIndexColumn() ? 1 : 0;
       fieldNamesInTable.add( item.getText( fieldNameIndex ) );
     }
-    return Arrays
-            .stream( incomingFieldNames )
-            .filter( fieldName -> !fieldNamesInTable.contains( fieldName ) )
-            .collect( Collectors.toList() );
+    final List<String> newFieldNames = Arrays.asList( fieldNamesInTable.toArray( new String[fieldNamesInTable.size()] ) ).stream().filter(
+      fieldName -> !Arrays.asList( incomingFieldNames ).contains( fieldName ) ).collect( Collectors.toList() );
+    return newFieldNames;
   }
 
   /**
@@ -140,7 +140,7 @@ public interface GetFieldsCapableStepDialog<StepMetaType extends BaseStepMeta> {
       // if there are no incoming fields at all, we leave the OK button handler as-is and simply dispose the dialog;
       // if there are some incoming fields, we overwrite the OK button handler to show the GetFieldsSampleDataDialog
       if ( incomingFieldNames != null && incomingFieldNames.length > 0 ) {
-        final Map<String, Listener> buttons = new HashMap<>();
+        final Map<String, Listener> buttons = new HashMap();
         buttons.put( BaseMessages.getString( PKG, "System.Button.OK" ), event -> {
           errorDlg.dispose();
           openGetFieldsSampleDataDialog( true );
@@ -161,14 +161,14 @@ public interface GetFieldsCapableStepDialog<StepMetaType extends BaseStepMeta> {
   default Map<String, List<String>> getFieldValues() {
     getFieldsTable().nrNonEmpty();
     final Map<String, List<String>> rowValues = new HashMap<>();
-    for ( int i = 0; i < getFieldsTable().getTable().getItemCount(); i++ ) {
-      final TableItem item = getFieldsTable().getTable().getItem( i );
+    for ( int i = 0; i < getFieldsTable().table.getItemCount(); i++ ) {
+      final TableItem item = getFieldsTable().table.getItem( i );
       int startIndex = getFieldsTable().hasIndexColumn() ? 1 : 0;
       final String fieldName = item.getText( startIndex );
       if ( StringUtils.isBlank( fieldName ) ) {
         continue;
       }
-      final List<String> values = new ArrayList<>();
+      final List<String> values = new ArrayList();
       for ( int j = startIndex; j < getFieldsTable().getColumns().length; j++ ) {
         values.add( item.getText( j ) );
       }
@@ -181,9 +181,9 @@ public interface GetFieldsCapableStepDialog<StepMetaType extends BaseStepMeta> {
                                         final boolean reloadAllFields ) {
     // incoming field names
     final String[] incomingFieldNames = getFieldNames( meta );
-    final Set<String> newFieldNames = new HashSet<>();
+    final Set<String> newFieldNames = new HashSet();
     for ( final String incomingFieldName : incomingFieldNames ) {
-      final TableItem item = new TableItem( getFieldsTable().getTable(), SWT.NONE );
+      final TableItem item = new TableItem( getFieldsTable().table, SWT.NONE );
       int columnIndexOffset = getFieldsTable().hasIndexColumn() ? 1 : 0;
       item.setText( columnIndexOffset, incomingFieldName );
       if ( previousFieldValues.containsKey( incomingFieldName ) ) {
@@ -210,9 +210,11 @@ public interface GetFieldsCapableStepDialog<StepMetaType extends BaseStepMeta> {
   }
 
   default void loadRemainingFields( final Map<String, List<String>> previousFieldValues ) {
-    for ( List<String> values : previousFieldValues.values() ) {
+    final Iterator<List<String>> remainigValues = previousFieldValues.values().iterator();
+    while ( remainigValues.hasNext() ) {
+      final List<String> values = remainigValues.next();
       if ( values != null ) {
-        final TableItem item = new TableItem( getFieldsTable().getTable(), SWT.NONE );
+        final TableItem item = new TableItem( getFieldsTable().table, SWT.NONE );
         int columnIndexOffset = getFieldsTable().hasIndexColumn() ? 1 : 0;
         int columnIndex = 0;
         for ( final String value : values ) {
@@ -254,25 +256,17 @@ public interface GetFieldsCapableStepDialog<StepMetaType extends BaseStepMeta> {
   }
 
   default TableItem getTableItem( final String fieldName ) {
-    return getTableItem( fieldName, false );
-  }
-
-  default TableItem getTableItem( final String fieldName, final boolean reloadAllFields ) {
-
-    if ( reloadAllFields ) {
-      return new TableItem( getFieldsTable().getTable(), SWT.NONE );
-    }
     // try to find a table item corresponding to the current field name
     TableItem item = findTableItem( fieldName );
     // if one doesn't exist, create a new one;
     if ( item == null ) {
-      item = new TableItem( getFieldsTable().getTable(), SWT.NONE );
+      item = new TableItem( getFieldsTable().table, SWT.NONE );
     }
     return item;
   }
 
 
-  void getData( final StepMetaType inputMeta, final boolean copyStepName, final boolean reloadAllFields,
+  void getData( final StepMetaType inputMeta, final boolean copyStepname, final boolean reloadAllFields,
                 final Set<String> newFieldNames );
 
   default StepMetaType getPopulatedMeta() {

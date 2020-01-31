@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -105,10 +105,6 @@ public class TableInputDialog extends BaseStepDialog implements StepDialogInterf
   private Label wlLazyConversion;
   private Button wLazyConversion;
   private FormData fdlLazyConversion, fdLazyConversion;
-
-  private Label wlCachedRowMeta;
-  private Button wCachedRowMeta;
-  private FormData fdlCachedRowMeta, fdCachedRowMeta;
 
   private Button wbTable;
   private FormData fdbTable;
@@ -301,35 +297,12 @@ public class TableInputDialog extends BaseStepDialog implements StepDialogInterf
       }
     } );
 
-    // Cached Row Meta conversion?
-    //
-    wlCachedRowMeta = new Label( shell, SWT.RIGHT );
-    wlCachedRowMeta.setText( BaseMessages.getString( PKG, "TableInputDialog.CacheRowMeta" ) );
-    props.setLook( wlCachedRowMeta );
-    fdlCachedRowMeta = new FormData();
-    fdlCachedRowMeta.left = new FormAttachment( 0, 0 );
-    fdlCachedRowMeta.right = new FormAttachment( middle, -margin );
-    fdlCachedRowMeta.bottom = new FormAttachment( wLazyConversion, -margin );
-    wlCachedRowMeta.setLayoutData( fdlCachedRowMeta );
-    wCachedRowMeta = new Button( shell, SWT.CHECK );
-    props.setLook( wCachedRowMeta );
-    fdCachedRowMeta = new FormData();
-    fdCachedRowMeta.left = new FormAttachment( middle, 0 );
-    fdCachedRowMeta.right = new FormAttachment( 100, 0 );
-    fdCachedRowMeta.bottom = new FormAttachment( wLazyConversion, -margin );
-    wCachedRowMeta.setLayoutData( fdCachedRowMeta );
-    wCachedRowMeta.addSelectionListener( new SelectionAdapter() {
-      public void widgetSelected( SelectionEvent arg0 ) {
-        input.setChanged();
-      }
-    } );
-
     wlPosition = new Label( shell, SWT.NONE );
     props.setLook( wlPosition );
     fdlPosition = new FormData();
     fdlPosition.left = new FormAttachment( 0, 0 );
     fdlPosition.right = new FormAttachment( 100, 0 );
-    fdlPosition.bottom = new FormAttachment( wCachedRowMeta, -margin );
+    fdlPosition.bottom = new FormAttachment( wLazyConversion, -margin );
     wlPosition.setLayoutData( fdlPosition );
 
     // Table line...
@@ -512,7 +485,6 @@ public class TableInputDialog extends BaseStepDialog implements StepDialogInterf
 
     wVariables.setSelection( input.isVariableReplacementActive() );
     wLazyConversion.setSelection( input.isLazyConversionActive() );
-    wCachedRowMeta.setSelection( input.isCachedRowMetaActive() );
 
     setSQLToolTip();
     setFlags();
@@ -551,7 +523,6 @@ public class TableInputDialog extends BaseStepDialog implements StepDialogInterf
     meta.setExecuteEachInputRow( wEachRow.getSelection() );
     meta.setVariableReplacementActive( wVariables.getSelection() );
     meta.setLazyConversionActive( wLazyConversion.getSelection() );
-    meta.setCachedRowMetaActive( wCachedRowMeta.getSelection() );
   }
 
   private void ok() {
@@ -563,7 +534,6 @@ public class TableInputDialog extends BaseStepDialog implements StepDialogInterf
     // copy info to TextFileInputMeta class (input)
 
     getInfo( input, false );
-    input.updateCachedRowMeta();
 
     if ( input.getDatabaseMeta() == null ) {
       MessageBox mb = new MessageBox( shell, SWT.OK | SWT.ICON_ERROR );

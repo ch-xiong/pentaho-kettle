@@ -580,12 +580,6 @@ public class OraBulkLoader extends BaseStep implements StepInterface {
     return true;
   }
 
-  protected void verifyDatabaseConnection() throws KettleException {
-    if ( meta.getDatabaseMeta() == null ) {
-      throw new KettleException( BaseMessages.getString( PKG, "OraBulkLoaderMeta.GetSQL.NoConnectionDefined" ) );
-    }
-  }
-
   public boolean init( StepMetaInterface smi, StepDataInterface sdi ) {
     meta = (OraBulkLoaderMeta) smi;
     data = (OraBulkLoaderData) sdi;
@@ -593,16 +587,7 @@ public class OraBulkLoader extends BaseStep implements StepInterface {
     Trans trans = getTrans();
     preview = trans.isPreview();
 
-    if ( super.init( smi, sdi ) ) {
-      try {
-        verifyDatabaseConnection();
-      } catch ( KettleException ex ) {
-        logError( ex.getMessage() );
-        return false;
-      }
-      return true;
-    }
-    return false;
+    return super.init( smi, sdi );
   }
 
   public void dispose( StepMetaInterface smi, StepDataInterface sdi ) {

@@ -25,8 +25,6 @@ package org.pentaho.di.plugins.fileopensave.endpoints;
 import org.pentaho.di.plugins.fileopensave.api.providers.File;
 import org.pentaho.di.plugins.fileopensave.api.providers.FromTo;
 import org.pentaho.di.plugins.fileopensave.api.providers.Tree;
-import org.pentaho.di.plugins.fileopensave.api.providers.exception.FileException;
-import org.pentaho.di.plugins.fileopensave.api.providers.exception.FileNotFoundException;
 import org.pentaho.di.plugins.fileopensave.controllers.FileController;
 import org.pentaho.di.plugins.fileopensave.controllers.RepositoryBrowserController;
 
@@ -40,7 +38,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -52,6 +49,7 @@ public class FileBrowserEndpoint {
   private final RepositoryBrowserController repositoryBrowserController;
   private final FileController fileController;
 
+  // TODO: Move properties into the post p
   public FileBrowserEndpoint( RepositoryBrowserController repositoryBrowserController,
                               FileController fileController ) {
     this.repositoryBrowserController = repositoryBrowserController;
@@ -61,13 +59,8 @@ public class FileBrowserEndpoint {
   @GET
   @Path( "/loadDirectoryTree{filter : (/filter)?}" )
   @Produces( { MediaType.APPLICATION_JSON } )
-  public Response loadDirectoryTree( @PathParam( "filter" ) String filter,
-                                     @QueryParam( "connectionTypes" ) String connectionTypes ) {
-    List<String> connectionTypeList = new ArrayList<>();
-    if ( connectionTypes != null ) {
-      Collections.addAll( connectionTypeList, connectionTypes.split( "," ) );
-    }
-    List<Tree> trees = fileController.load( filter, connectionTypeList );
+  public Response loadDirectoryTree( @PathParam( "filter" ) String filter ) {
+    List<Tree> trees = fileController.load();
     return Response.ok( trees ).build();
   }
 
@@ -78,28 +71,7 @@ public class FileBrowserEndpoint {
                             @QueryParam( "useCache" ) Boolean useCache,
                             File file ) {
     useCache = useCache != null ? useCache : true;
-    if ( !useCache ) {
-      fileController.clearCache( file );
-    }
-    try {
-      return Response.ok( fileController.getFiles( file, filters, useCache ) ).build();
-    } catch ( FileException e ) {
-      if ( e instanceof FileNotFoundException ) {
-        return Response.status( Response.Status.NOT_FOUND ).build();
-      }
-    }
-    return Response.status( Response.Status.NO_CONTENT ).build();
-  }
-
-  @POST
-  @Path( "/getFile" )
-  @Produces( { MediaType.APPLICATION_JSON } )
-  public Response getFile( File file ) {
-    File result = fileController.getFile( file );
-    if ( result == null ) {
-      return Response.status( Response.Status.NOT_FOUND ).build();
-    }
-    return Response.ok( result ).build();
+    return Response.ok( fileController.getFiles( file, filters, useCache ) ).build();
   }
 
   @POST
@@ -238,6 +210,13 @@ public class FileBrowserEndpoint {
   @Produces( { MediaType.APPLICATION_JSON } )
   public Response search( @PathParam( "path" ) String path, @PathParam( "filter" ) String filter ) {
     return Response.ok( repositoryBrowserController.search( path, filter ) ).build();
+  }
+
+  @GET
+  @Path( "/recentFiles" )
+  @Produces( { MediaType.APPLICATION_JSON } )
+  public Response recentFiles() {
+    return Response.ok( repositoryBrowserController.getRecentFiles() ).build();
   }
 
   @GET

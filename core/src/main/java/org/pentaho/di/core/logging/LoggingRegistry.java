@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2018 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -50,8 +49,8 @@ public class LoggingRegistry {
   private final Object syncObject = new Object();
 
   private LoggingRegistry() {
-    this.map = new ConcurrentHashMap<>();
-    this.childrenMap = new ConcurrentHashMap<>();
+    this.map = new ConcurrentHashMap<String, LoggingObjectInterface>();
+    this.childrenMap = new ConcurrentHashMap<String, List<String>>();
     this.fileWriterBuffers = new ConcurrentHashMap<>();
 
     this.lastModificationTime = new Date();
@@ -166,14 +165,12 @@ public class LoggingRegistry {
   }
 
   public List<String> getLogChannelChildren( String parentLogChannelId ) {
-    synchronized ( this.syncObject ) {
-      if ( parentLogChannelId == null ) {
-        return null;
-      }
-      List<String> list = getLogChannelChildren( new ArrayList<>(), parentLogChannelId );
-      list.add( parentLogChannelId );
-      return list;
+    if ( parentLogChannelId == null ) {
+      return null;
     }
+    List<String> list = getLogChannelChildren( new ArrayList<String>(), parentLogChannelId );
+    list.add( parentLogChannelId );
+    return list;
   }
 
   private List<String> getLogChannelChildren( List<String> children, String parentLogChannelId ) {
@@ -263,44 +260,12 @@ public class LoggingRegistry {
   }
 
   public LogChannelFileWriterBuffer getLogChannelFileWriterBuffer( String id ) {
-    synchronized ( syncObject ) {
-      LogChannelFileWriterBuffer fileWriterBuffer = this.fileWriterBuffers.get( id );
-      if ( fileWriterBuffer != null ) {
-        return fileWriterBuffer;
+    for ( String bufferId : this.fileWriterBuffers.keySet() ) {
+      if ( getLogChannelChildren( bufferId ).contains( id ) ) {
+        return this.fileWriterBuffers.get( bufferId );
       }
-
-      ConcurrentHashMap<LogChannelFileWriterBuffer, List<String>> possibleWriters = new ConcurrentHashMap<>();
-
-      for ( Map.Entry<String, LogChannelFileWriterBuffer> entry : this.fileWriterBuffers.entrySet() ) {
-        final String bufferId = entry.getKey();
-        List<String> logChannelChildren = getLogChannelChildren( bufferId );
-        if ( logChannelChildren.contains( id ) ) {
-          possibleWriters.put( entry.getValue(), logChannelChildren );
-        }
-      }
-
-      //Just one writer so just return it
-      if ( possibleWriters.size() == 1 ) {
-        return possibleWriters.keys().nextElement();
-      } else {
-        //Several possibilities, so, lets get the writer among them that is the "lowest in the chain",
-        //meaning, the one that is not a parent of the others
-        Enumeration<LogChannelFileWriterBuffer> possibleWritersIds = possibleWriters.keys();
-        while ( possibleWritersIds.hasMoreElements() ) {
-          LogChannelFileWriterBuffer writer = possibleWritersIds.nextElement();
-          Set<Map.Entry<LogChannelFileWriterBuffer, List<String>>> entries = possibleWriters.entrySet();
-          for ( Map.Entry<LogChannelFileWriterBuffer, List<String>> entry : entries ) {
-            if ( entry.getKey().equals( writer ) ) {
-              continue;
-            }
-            if ( !entry.getValue().contains( writer.getLogChannelId() ) ) {
-              return entry.getKey();
-            }
-          }
-        }
-      }
-      return null;
     }
+    return null;
   }
 
   protected Set<String> getLogChannelFileWriterBufferIds() {

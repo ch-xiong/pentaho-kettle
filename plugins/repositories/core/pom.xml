@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>repositories-plugin-core</artifactId>
-  <version>9.0.0.0-SNAPSHOT</version>
+  <version>8.3.0.0-371</version>
   <packaging>bundle</packaging>
 
   <name>PDI Repositories Plugin Core</name>
@@ -12,11 +12,11 @@
   <parent>
     <groupId>org.pentaho.di.plugins</groupId>
     <artifactId>repositories</artifactId>
-    <version>9.0.0.0-SNAPSHOT</version>
+    <version>8.3.0.0-371</version>
   </parent>
 
   <properties>
-    <pdi.version>9.0.0.0-SNAPSHOT</pdi.version>
+    <pdi.version>8.3.0.0-371</pdi.version>
     <javax.ws.rs-api.version>2.0</javax.ws.rs-api.version>
     <mockito-all.version>1.9.5</mockito-all.version>
     <json-simple.version>1.1</json-simple.version>
@@ -25,6 +25,8 @@
     <eclipse.version>3.6.0</eclipse.version>
     <junit.version>4.11</junit.version>
     <js.project.list>requirejs,requirejs-text,angular,require-css,angular-i18n</js.project.list>
+    <rap.version>3.7.0</rap.version>
+    <webspoon.version>8.3.0.0-371-19</webspoon.version>
   </properties>
 
   <dependencies>
@@ -35,8 +37,9 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
-      <groupId>org.webjars.npm</groupId>
+      <groupId>org.webjars</groupId>
       <artifactId>jquery</artifactId>
+      <version>${jquery.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -78,7 +81,7 @@
     <dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
-      <version>${pdi.version}</version>
+      <version>${webspoon.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -86,10 +89,6 @@
       <artifactId>kettle-ui-swt</artifactId>
       <version>${pdi.version}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.pentaho.di.plugins</groupId>
-      <artifactId>core-ui</artifactId>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
@@ -197,6 +196,12 @@
       <groupId>org.eclipse.core</groupId>
       <artifactId>org.eclipse.core.commands</artifactId>
       <version>${eclipse.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.rap</groupId>
+      <artifactId>org.eclipse.rap.rwt.testfixture</artifactId>
+      <version>${rap.version}-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

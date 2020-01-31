@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -212,15 +212,15 @@ abstract class BaseRowSet implements Comparable<RowSet>, RowSet {
    * @see org.pentaho.di.core.RowSetInterface#setThreadNameFromToCopy(java.lang.String, int, java.lang.String, int)
    */
   @Override
-  public void setThreadNameFromToCopy( String from, int fromCopy, String to, int toCopy ) {
+  public void setThreadNameFromToCopy( String from, int from_copy, String to, int to_copy ) {
 
     lock.writeLock().lock();
     try {
       originStepName = from;
-      originStepCopy.set( fromCopy );
+      originStepCopy.set( from_copy );
 
       destinationStepName = to;
-      destinationStepCopy.set( toCopy );
+      destinationStepCopy.set( to_copy );
     } finally {
       lock.writeLock().unlock();
     }

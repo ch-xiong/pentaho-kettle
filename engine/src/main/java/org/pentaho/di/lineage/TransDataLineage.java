@@ -98,12 +98,11 @@ public class TransDataLineage {
     // So lets sort the maps, turn them into lists...
     //
     Map<StepMeta, List<StepMeta>> previousStepListMap = new HashMap<StepMeta, List<StepMeta>>();
-    for ( Map.Entry<StepMeta, Map<StepMeta, Boolean>> entry : stepMap.entrySet() ) {
-      StepMeta stepMeta = entry.getKey();
+    for ( StepMeta stepMeta : stepMap.keySet() ) {
       List<StepMeta> previousSteps = new ArrayList<StepMeta>();
       previousStepListMap.put( stepMeta, previousSteps );
 
-      previousSteps.addAll( entry.getValue().keySet() );
+      previousSteps.addAll( stepMap.get( stepMeta ).keySet() );
 
       // Sort this list...
       //

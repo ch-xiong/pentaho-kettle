@@ -26,9 +26,6 @@ import com.google.common.base.Preconditions;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.row.ValueMetaInterface;
 
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -97,7 +94,9 @@ public class SnowflakeHVDatabaseMeta extends BaseDatabaseMeta implements Databas
       + realHostname
       + getParamIfSet( ":", port )
       + "/?account=" + account
-      + "&db=" + databaseName;
+      + "&db=" + databaseName
+      + "&user=" + getUsername()
+      + "&password=" + getPassword();
   }
 
   private String getParamIfSet( String param, String val ) {
@@ -165,7 +164,7 @@ public class SnowflakeHVDatabaseMeta extends BaseDatabaseMeta implements Databas
 
   @Override
   public String getFieldDefinition( ValueMetaInterface v, String surrogateKey, String primaryKey, boolean useAutoinc,
-                                    boolean addFieldName, boolean addCr ) {
+                                    boolean addFieldname, boolean addCr ) {
     String fieldDefinitionDdl = "";
 
     String newline = addCr ? Const.CR : "";
@@ -177,7 +176,7 @@ public class SnowflakeHVDatabaseMeta extends BaseDatabaseMeta implements Databas
 
     boolean isKeyField = fieldname.equalsIgnoreCase( surrogateKey ) || fieldname.equalsIgnoreCase( primaryKey );
 
-    if ( addFieldName ) {
+    if ( addFieldname ) {
       fieldDefinitionDdl += fieldname + " ";
     }
     if ( isKeyField ) {
@@ -439,17 +438,4 @@ public class SnowflakeHVDatabaseMeta extends BaseDatabaseMeta implements Databas
     return false;
   }
 
-  @Override public void putOptionalOptions( Map<String, String> extraOptions ) {
-    extraOptions.put( "SNOWFLAKEHV." + WAREHOUSE, getAttribute( WAREHOUSE, "" ) );
-  }
-
-  @Override public ResultSet getSchemas( DatabaseMetaData databaseMetaData, DatabaseMeta dbMeta )
-    throws SQLException {
-    return databaseMetaData.getSchemas( dbMeta.getDatabaseName(), null );
-  }
-
-  @Override public ResultSet getTables( DatabaseMetaData databaseMetaData, DatabaseMeta dbMeta, String schemaPattern,
-                                        String tableNamePattern, String[] tableTypes ) throws SQLException {
-    return databaseMetaData.getTables( dbMeta.getDatabaseName(), schemaPattern, tableNamePattern, tableTypes );
-  }
 }

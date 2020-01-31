@@ -277,7 +277,7 @@ public class ConstUI {
     // on OS X. Tested on Windows to be sure there is no adverse effect.
     // Unfortunately, I do *not* understand why this works. I ran it by
     // mcasters and he didn't know for sure either.
-    // control.setMenu(menu);
+    control.setMenu( menu );
     menu.setVisible( true );
   }
 

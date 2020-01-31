@@ -266,71 +266,6 @@ public class JobEntryTransTest {
   }
 
   @Test
-  public void testPrepareFieldNamesParametersWithNulls() throws UnknownParamException {
-    //NOTE: this only tests the prepareFieldNamesParameters function not all variable substitution logic
-    // array of params
-    String[] parameterNames = new String[7];
-    parameterNames[0] = "param1";
-    parameterNames[1] = "param2";
-    parameterNames[2] = "param3";
-    parameterNames[3] = "param4";
-    parameterNames[4] = "param5";
-    parameterNames[5] = "param6";
-    parameterNames[6] = "param7";
-
-    // array of fieldNames params
-    String[] parameterFieldNames = new String[7];
-    parameterFieldNames[0] = null;
-    parameterFieldNames[2] = "ValueParam3";
-    parameterFieldNames[3] = "FieldValueParam4";
-    parameterFieldNames[4] = "FieldValueParam5";
-    parameterFieldNames[6] = "FieldValueParam7";
-
-    // array of parameterValues params
-    String[] parameterValues = new String[7];
-    parameterValues[1] = "ValueParam2";
-    parameterValues[3] = "";
-    parameterValues[4] = "StaticValueParam5";
-    parameterValues[5] = "StaticValueParam6";
-
-
-    JobEntryTrans jet = new JobEntryTrans();
-    VariableSpace variableSpace = new Variables();
-    jet.copyVariablesFrom( variableSpace );
-
-    jet.setVariable( "param6", "someDummyPreviousValue6" );
-    jet.setVariable( "param7", "someDummyPreviousValue7" );
-
-    //at this point StreamColumnNameParams are already inserted in namedParams
-    NamedParams namedParam = Mockito.mock( NamedParamsDefault.class );
-    Mockito.doReturn( "value1" ).when( namedParam ).getParameterValue(  "param1" );
-    Mockito.doReturn( "value2" ).when( namedParam ).getParameterValue(  "param2" );
-    Mockito.doReturn( "value3" ).when( namedParam ).getParameterValue(  "param3" );
-    Mockito.doReturn( "value4" ).when( namedParam ).getParameterValue(  "param4" );
-    Mockito.doReturn( "value5" ).when( namedParam ).getParameterValue(  "param5" );
-    Mockito.doReturn( "" ).when( namedParam ).getParameterValue(  "param6" );
-    Mockito.doReturn( "" ).when( namedParam ).getParameterValue(  "param7" );
-
-    jet.prepareFieldNamesParameters( parameterNames, parameterFieldNames, parameterValues, namedParam, jet );
-    // "param1" has parameterFieldName value = null and no parameterValues defined so it should be null
-    Assert.assertEquals( null, jet.getVariable( "param1" ) );
-    // "param2" has only parameterValues defined and no parameterFieldName value so it should be null
-    Assert.assertEquals( null, jet.getVariable( "param2" ) );
-    // "param3" has only the parameterFieldName defined so it should return the mocked value
-    Assert.assertEquals( "value3", jet.getVariable( "param3" ) );
-    // "param4" has parameterFieldName and also an empty parameterValues defined so it should return the mocked value
-    Assert.assertEquals( "value4", jet.getVariable( "param4" ) );
-    // "param5" has parameterFieldName and also parameterValues defined with a not empty value so it should return null
-    Assert.assertEquals( null, jet.getVariable( "param5" ) );
-    // "param6" only has a parameterValues defined with a not empty value and has a previous value on it ( someDummyPreviousValue6 )
-    // so it should keep "someDummyPreviousValue6" since there is no parameterFieldNames definition
-    Assert.assertEquals( "someDummyPreviousValue6", jet.getVariable( "param6" ) );
-    // "param7" only has a parameterFieldNames defined and has a previous value on it ( someDummyPreviousValue7 )
-    // so it should update to the new value mocked = "" even it is a blank value - PDI-18227
-    Assert.assertEquals( "", jet.getVariable( "param7" ) );
-  }
-
-  @Test
   public void testGetTransMeta() throws KettleException {
     String param1 = "param1";
     String param2 = "param2";
@@ -422,54 +357,26 @@ public class JobEntryTransTest {
 
   @Test
   public void updateResultTest() {
-    JobEntryTrans jobEntryTrans = spy( getJobEntryTrans() );
-    Trans transMock = mock( Trans.class );
-    setInternalState( jobEntryTrans, "trans", transMock );
-    //Transformation returns result with 5 rows
-    when( transMock.getResult() ).thenReturn( generateDummyResult( 5 ) );
-    //Previous result has 3 rows
-    Result resultToBeUpdated = generateDummyResult( 3 );
-    //Update the result
-    jobEntryTrans.updateResult( resultToBeUpdated );
-    //Result should have 5 number of rows since the trans result has 5 rows (meaning 5 rows were returned)
-    assertEquals( resultToBeUpdated.getRows().size(), 5 );
+    updateResultTest( 3, 5 );
   }
 
   @Test
   public void updateResultTestWithZeroRows() {
-    JobEntryTrans jobEntryTrans = spy( getJobEntryTrans() );
-    Trans transMock = mock( Trans.class );
-    setInternalState( jobEntryTrans, "trans", transMock );
-    //Transformation returns result with 0 rows
-    when( transMock.getResult() ).thenReturn( generateDummyResult( 0 ) );
-    //Previous result has 3 rows
-    Result resultToBeUpdated = generateDummyResult( 3 );
-    //Update the result
-    jobEntryTrans.updateResult( resultToBeUpdated );
-    //Result should have 3 number of rows since the trans result has no rows (meaning nothing was done)
-    assertEquals( resultToBeUpdated.getRows().size(), 3 );
-  }
-
-  @Test
-  public void updateResultTestWithZeroRowsForced() {
-    JobEntryTrans jobEntryTrans = spy( getJobEntryTrans() );
-    Trans transMock = mock( Trans.class );
-    setInternalState( jobEntryTrans, "trans", transMock );
-    //Transformation returns result with 0 rows
-    when( transMock.getResult() ).thenReturn( generateDummyResult( 0 ) );
-    //Previous result has 3 rows
-    Result resultToBeUpdated = generateDummyResult( 3 );
-    //Result Set Was updated
-    when( transMock.isResultRowsSet() ).thenReturn( true );
-    //Update the result
-    jobEntryTrans.updateResult( resultToBeUpdated );
-    //Result should have zero number of rows since the result rows has no rows but the result set was in fact updated
-    //(meaning something was done that resulted in zero rows.
-    assertEquals( resultToBeUpdated.getRows().size(), 0 );
+    updateResultTest( 3, 0 );
   }
 
   private void updateResultTest( int previousRowsResult, int newRowsResult ) {
-
+    JobEntryTrans jobEntryTrans = spy( getJobEntryTrans() );
+    Trans transMock = mock( Trans.class );
+    setInternalState( jobEntryTrans, "trans", transMock );
+    //Transformation returns result with <newRowsResult> rows
+    when( transMock.getResult() ).thenReturn( generateDummyResult( newRowsResult ) );
+    //Previous result has <previousRowsResult> rows
+    Result resultToBeUpdated = generateDummyResult( previousRowsResult );
+    //Update the result
+    jobEntryTrans.updateResult( resultToBeUpdated );
+    //Result should have the number of rows of the transformation result
+    assertEquals( resultToBeUpdated.getRows().size(), newRowsResult );
   }
 
   private Result generateDummyResult( int nRows ) {

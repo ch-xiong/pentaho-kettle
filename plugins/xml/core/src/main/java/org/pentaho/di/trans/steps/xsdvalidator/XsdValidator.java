@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2017 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -35,7 +35,6 @@ import javax.xml.validation.Validator;
 
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.provider.AbstractFileObject;
-import org.apache.xerces.xni.parser.XMLEntityResolver;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
@@ -232,23 +231,9 @@ public class XsdValidator extends BaseStep implements StepInterface {
         }
 
         // Create XSDValidator
-        Validator xsdValidator = SchematXSD.newValidator();
-
-        // Prevent against XML Entity Expansion (XEE) attacks.
-        // https://www.owasp.org/index.php/XML_Security_Cheat_Sheet#XML_Entity_Expansion
-        if ( !meta.isAllowExternalEntities() ) {
-          xsdValidator.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", true );
-          xsdValidator.setFeature( "http://xml.org/sax/features/external-general-entities", false );
-          xsdValidator.setFeature( "http://xml.org/sax/features/external-parameter-entities", false );
-          xsdValidator.setProperty( "http://apache.org/xml/properties/internal/entity-resolver",
-            (XMLEntityResolver) xmlResourceIdentifier -> {
-              String message = BaseMessages.getString( PKG, "XsdValidator.Exception.DisallowedDocType" );
-              throw new IOException( message );
-            } );
-        }
-
+        Validator XSDValidator = SchematXSD.newValidator();
         // Validate XML / XSD
-        xsdValidator.validate( sourceXML );
+        XSDValidator.validate( sourceXML );
 
         isvalid = true;
 

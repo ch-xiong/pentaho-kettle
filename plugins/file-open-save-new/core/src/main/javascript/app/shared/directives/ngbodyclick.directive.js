@@ -25,10 +25,8 @@ define([
         'ngBodyClick': '&'
       },
       link: function (scope, element, attr) {
-        angular.element($document).bind('click', function(e) {
-          var id = element[0].id;
-          scope.ngBodyClick({e: e, id: id});
-          scope.$apply();
+        angular.element($document).bind('click', function() {
+          scope.ngBodyClick();
         });
       }
     }
