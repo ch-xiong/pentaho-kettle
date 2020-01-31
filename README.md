@@ -1,6 +1,6 @@
 # webSpoon
 
-web Spoon是一个基于kettle的web图形设计器，用于Pentaho数据集成，外观和感觉与Kettle相同。
+web Spoon是一个基于kettle的web图形设计器，用于Pentaho数据集成，外观和操作与Kettle相同。
 
 ## 特性
 
@@ -121,7 +121,7 @@ webSpoon使用4位数字版本控制，规则如下：
 ```bash
 $ git clone -b webspoon-8.3 https://github.com/zhangrenhua/pentaho-commons-xul.git
 $ cd pentaho-commons-xul
-$ mvn clean install -pl swt
+$ mvn clean install -pl swt -Dmaven.test.skip=true
 ```
 
 ### rap
@@ -150,12 +150,20 @@ $ cd pentaho-kettle
 $ mvn clean install -Dmaven.test.skip=true
 ```
 
-解压`assemblies/pdi-server/target/pdi-server-8.3.0.0-371.tar.gz`，启动命令：
-linux/unix OS：`sh start-pentaho.sh`
-Windows：`start-pentaho.bat`
+解压命令：
+```bash
+cd assemblies/pdi-server/target/
+# 解压
+tar zxvf pdi-server-8.3.0.0-371.tar.gz
+cd webspoon/
+```
 
-启动之后浏览器访问：
-`http://localhost:8080/spoon/spoon`
+启动命令：
+
+- linux/unix OS：`sh start-pentaho.sh`
+- Windows OS：`start-pentaho.bat`
+
+启动之后浏览器访问：http://localhost:8080/spoon/spoon
 
 ## 使用Selenium进行UI测试
 
@@ -173,6 +181,6 @@ $ cd integration
 $ mvn clean test -Dtest.baseurl=http://localhost:8080/spoon/spoon -Dheadless.unittest=false
 ```
 
-# 通知
+# 感谢
 
 - 此版本是基于HiromuHot开源的增强版本，解决了很多RAP框架的重要bug。
